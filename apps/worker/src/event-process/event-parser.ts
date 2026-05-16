@@ -62,9 +62,9 @@ function parseJson(doc: Record<string, unknown>): ParsedEvent {
   };
 }
 
-const GRANTED_TYPES = new Set(['cardPassed', '1', 'access_granted']);
-const DENIED_TYPES = new Set(['cardNotPassed', '2', 'access_denied', 'noRight']);
-const TAMPER_TYPES = new Set(['tamper', 'tamperDetected', '119']);
+const GRANTED_TYPES = new Set(['cardpassed', '1', 'access_granted']);
+const DENIED_TYPES = new Set(['cardnotpassed', '2', 'access_denied', 'noright']);
+const TAMPER_TYPES = new Set(['tamper', 'tamperdetected', '119']);
 
 export function classifyEvent(parsed: ParsedEvent): string {
   const t = parsed.eventType?.toLowerCase() ?? '';

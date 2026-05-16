@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { RealtimeGateway } from './realtime/realtime.gateway';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
@@ -29,6 +30,10 @@ async function bootstrap(): Promise<void> {
   SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, doc));
 
   await app.listen(process.env['PORT'] ?? 3000);
+
+  // Attach Socket.IO after HTTP server starts
+  const gateway = app.get(RealtimeGateway);
+  gateway.attach(app.getHttpServer());
 }
 
 void bootstrap();
