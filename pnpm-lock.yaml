@@ -102,6 +102,9 @@ importers:
       '@sam/queue':
         specifier: workspace:*
         version: link:../../libs/queue
+      bullmq:
+        specifier: ^5.0.0
+        version: 5.76.9
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
