@@ -15,3 +15,15 @@ export interface UserSyncJobData {
   desiredState: 'present' | 'absent';
   revision: number;
 }
+
+export interface EventProcessJobData {
+  eventId: string;
+  deviceId: string;
+  tenantId: string;
+}
+
+export interface EventPollJobData {
+  deviceId: string;
+  tenantId: string;
+  since: string; // ISO date string
+}
