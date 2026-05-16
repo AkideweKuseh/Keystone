@@ -23,6 +23,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",
     "@commitlint/config-conventional": "^19.0.0",
+    "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
@@ -30,7 +31,11 @@
     "husky": "^9.0.0",
     "lint-staged": "^15.0.0",
     "prettier": "^3.0.0",
+    "prisma": "^5.22.0",
     "typescript": "^5.4.0"
+  },
+  "prisma": {
+    "seed": "ts-node --project tsconfig.base.json prisma/seed.ts"
   },
   "lint-staged": {
     "*.ts": [
@@ -40,5 +45,10 @@
     "*.{json,md,yml,yaml}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "@prisma/client": "^5",
+    "argon2": "^0.44.0",
+    "ts-node": "^10.9.0"
   }
 }
