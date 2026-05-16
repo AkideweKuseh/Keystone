@@ -2,13 +2,18 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/http-exception.filter';
 import { RealtimeGateway } from './realtime/realtime.gateway';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log'],
   });
+
+  // Security headers (HSTS, XSS, frame options, etc.)
+  app.use(helmet());
 
   app.setGlobalPrefix('api/v1', {
     exclude: ['health', 'health/ready', 'metrics'],
@@ -21,6 +26,9 @@ async function bootstrap(): Promise<void> {
       transform: true,
     }),
   );
+
+  // Problem+JSON error responses for every exception
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   const doc = new DocumentBuilder()
     .setTitle('Smart Access Middleware API')
