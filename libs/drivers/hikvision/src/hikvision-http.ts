@@ -21,6 +21,14 @@ export class HikvisionHttp {
     return this.request<T>('GET', path);
   }
 
+  async post<T = unknown>(
+    path: string,
+    body: string,
+    contentType = 'application/json',
+  ): Promise<T> {
+    return this.request<T>('POST', path, body, contentType);
+  }
+
   async put(path: string, body: string, contentType = 'application/xml'): Promise<void> {
     await this.request<unknown>('PUT', path, body, contentType);
   }

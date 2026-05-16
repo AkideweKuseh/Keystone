@@ -53,28 +53,84 @@ export class HikvisionDriver implements AccessDeviceDriver {
     };
   }
 
-  // ─── Phase 2+ stubs ──────────────────────────────────────────────────────
+  async upsertUser(user: DeviceUserPayload): Promise<void> {
+    const body = {
+      UserInfo: {
+        employeeNo: user.employeeNo,
+        name: `${user.firstName} ${user.lastName}`.trim() || user.employeeNo,
+        userType: 'normal',
+        Valid: {
+          enable: true,
+          beginTime: user.validFrom ?? '2000-01-01T00:00:00',
+          endTime: user.validTo ?? '2037-12-31T23:59:59',
+        },
+        doorRight: user.doorIndexes.join(',') || '1',
+        RightPlan: user.doorIndexes.map((idx) => ({ doorNo: idx, planTemplateNo: '1' })),
+      },
+    };
+    await this.http.post('/ISAPI/AccessControl/UserInfo/Record?format=json', JSON.stringify(body));
+  }
 
-  upsertUser(_user: DeviceUserPayload): Promise<void> {
-    return Promise.reject(DriverError.unsupported('upsertUser'));
+  async deleteUser(employeeNo: string): Promise<void> {
+    const body = { UserInfoDelCond: { EmployeeNoList: [{ employeeNo }] } };
+    await this.http.put(
+      '/ISAPI/AccessControl/UserInfoDetail/Delete?format=json',
+      JSON.stringify(body),
+      'application/json',
+    );
   }
-  deleteUser(_employeeNo: string): Promise<void> {
-    return Promise.reject(DriverError.unsupported('deleteUser'));
+
+  async listUsers(opts?: ListOpts): Promise<DeviceUserPayload[]> {
+    const body = {
+      UserInfoSearchCond: {
+        searchID: '1',
+        searchResultPosition: opts?.offset ?? 0,
+        maxResults: opts?.limit ?? 100,
+      },
+    };
+    const res = await this.http.post<{ UserInfoSearch?: { UserInfo?: Record<string, unknown>[] } }>(
+      '/ISAPI/AccessControl/UserInfo/Search?format=json',
+      JSON.stringify(body),
+    );
+    const list = res.UserInfoSearch?.UserInfo ?? [];
+    return list.map((u) => ({
+      employeeNo: String(u['employeeNo'] ?? ''),
+      firstName: String(u['name'] ?? '').split(' ')[0] ?? '',
+      lastName: String(u['name'] ?? '')
+        .split(' ')
+        .slice(1)
+        .join(' '),
+      doorIndexes: [],
+    }));
   }
-  listUsers(_opts?: ListOpts): Promise<DeviceUserPayload[]> {
-    return Promise.reject(DriverError.unsupported('listUsers'));
+
+  async upsertCard(employeeNo: string, card: CardPayload): Promise<void> {
+    const body = {
+      CardInfo: {
+        employeeNo,
+        cardNo: card.cardNumber,
+        cardType: 'normalCard',
+      },
+    };
+    await this.http.post('/ISAPI/AccessControl/CardInfo/Record?format=json', JSON.stringify(body));
   }
-  upsertCard(_employeeNo: string, _card: CardPayload): Promise<void> {
-    return Promise.reject(DriverError.unsupported('upsertCard'));
+
+  async unlockDoor(doorIndex: number, _durationSec = 5): Promise<void> {
+    const body = `<RemoteControlDoor version="2.0"><cmd>open</cmd></RemoteControlDoor>`;
+    await this.http.put(
+      `/ISAPI/AccessControl/RemoteControl/door/${doorIndex}`,
+      body,
+      'application/xml',
+    );
   }
+
+  // ─── Phase 3+ stubs ──────────────────────────────────────────────────────
+
   upsertFace(_employeeNo: string, _image: Buffer): Promise<void> {
     return Promise.reject(DriverError.unsupported('upsertFace'));
   }
   deleteCard(_employeeNo: string, _cardNumber: string): Promise<void> {
     return Promise.reject(DriverError.unsupported('deleteCard'));
-  }
-  unlockDoor(_doorIndex: number, _durationSec?: number): Promise<void> {
-    return Promise.reject(DriverError.unsupported('unlockDoor'));
   }
   lockDoor(_doorIndex: number): Promise<void> {
     return Promise.reject(DriverError.unsupported('lockDoor'));
