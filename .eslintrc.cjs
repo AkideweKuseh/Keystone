@@ -17,5 +17,5 @@ module.exports = {
     '@typescript-eslint/no-floating-promises': 'error',
     'no-console': 'error',
   },
-  ignorePatterns: ['dist/', 'node_modules/', '*.js', '*.cjs', '*.mjs'],
+  ignorePatterns: ['dist/', 'node_modules/', '*.js', '*.cjs', '*.mjs', 'prisma.config.ts'],
 };

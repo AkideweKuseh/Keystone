@@ -1,0 +1,11 @@
+// Prisma schema — datasource only for Phase 0.
+// Models are added in Phase 1 (see docs/03-database-schema.md).
+// Connection URL is in prisma.config.ts (Prisma 7+ requirement).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
