@@ -1,0 +1,34 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Relevant phase
+      options:
+        - Phase 1 — Core API & Device Registration
+        - Phase 2 — Users, Credentials & Sync Engine
+        - Phase 3 — Events, Realtime & Face Sync
+        - Phase 4 — Hardening & Production Readiness
+        - Phase 5 — Multi-Tenant & Roadmap Features
+        - Not phase-specific
