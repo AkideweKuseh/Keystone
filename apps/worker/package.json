@@ -18,6 +18,8 @@
     "@sam/persistence": "workspace:*",
     "@sam/queue": "workspace:*",
     "bullmq": "^5.76.9",
+    "fast-xml-parser": "^5.8.0",
+    "ioredis": "^5.10.1",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {

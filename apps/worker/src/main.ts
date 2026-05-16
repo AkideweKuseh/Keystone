@@ -2,6 +2,8 @@ import 'reflect-metadata';
 import { CryptoService } from '@sam/auth';
 import { PrismaService } from '@sam/persistence';
 import { createCapabilityDiscoveryWorker } from './capability-discovery/capability-discovery.processor';
+import { createEventPollWorker } from './event-poll/event-poll.processor';
+import { createEventProcessWorker } from './event-process/event-process.processor';
 import { createHealthCheckWorker } from './health-check/health-check.processor';
 import { createReconcilerWorker } from './reconciler/reconciler.processor';
 import { createUserSyncWorker } from './user-sync/user-sync.processor';
@@ -17,6 +19,8 @@ async function bootstrap(): Promise<void> {
     createHealthCheckWorker(prisma, crypto),
     createUserSyncWorker(prisma, crypto),
     createReconcilerWorker(prisma, crypto),
+    createEventProcessWorker(prisma),
+    createEventPollWorker(prisma, crypto),
   ];
 
   process.stdout.write(`Workers started: ${workers.length} queues active\n`);
