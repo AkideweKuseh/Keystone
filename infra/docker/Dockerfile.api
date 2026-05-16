@@ -1,0 +1,29 @@
+FROM node:20-alpine AS base
+WORKDIR /app
+RUN npm install -g pnpm@9
+
+FROM base AS deps
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json apps/api/
+COPY libs/domain/package.json libs/domain/
+COPY libs/shared/package.json libs/shared/
+COPY libs/auth/package.json libs/auth/
+COPY libs/queue/package.json libs/queue/
+COPY libs/persistence/package.json libs/persistence/
+COPY libs/audit/package.json libs/audit/
+RUN pnpm install --frozen-lockfile --prod
+
+FROM base AS build
+COPY --from=deps /app/node_modules ./node_modules
+COPY tsconfig.base.json ./
+COPY apps/api ./apps/api
+COPY libs ./libs
+RUN pnpm --filter @sam/api build
+
+FROM node:20-alpine AS runtime
+WORKDIR /app
+COPY --from=build /app/apps/api/dist ./dist
+COPY --from=build /app/node_modules ./node_modules
+ENV NODE_ENV=production
+EXPOSE 3000
+CMD ["node", "dist/main.js"]

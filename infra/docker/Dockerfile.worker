@@ -1,0 +1,29 @@
+FROM node:20-alpine AS base
+WORKDIR /app
+RUN npm install -g pnpm@9
+
+FROM base AS deps
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/worker/package.json apps/worker/
+COPY libs/domain/package.json libs/domain/
+COPY libs/shared/package.json libs/shared/
+COPY libs/queue/package.json libs/queue/
+COPY libs/persistence/package.json libs/persistence/
+COPY libs/drivers/core/package.json libs/drivers/core/
+COPY libs/drivers/hikvision/package.json libs/drivers/hikvision/
+COPY libs/drivers/mock/package.json libs/drivers/mock/
+RUN pnpm install --frozen-lockfile --prod
+
+FROM base AS build
+COPY --from=deps /app/node_modules ./node_modules
+COPY tsconfig.base.json ./
+COPY apps/worker ./apps/worker
+COPY libs ./libs
+RUN pnpm --filter @sam/worker build
+
+FROM node:20-alpine AS runtime
+WORKDIR /app
+COPY --from=build /app/apps/worker/dist ./dist
+COPY --from=build /app/node_modules ./node_modules
+ENV NODE_ENV=production
+CMD ["node", "dist/main.js"]

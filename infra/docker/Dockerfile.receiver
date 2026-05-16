@@ -1,0 +1,27 @@
+FROM node:20-alpine AS base
+WORKDIR /app
+RUN npm install -g pnpm@9
+
+FROM base AS deps
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/receiver/package.json apps/receiver/
+COPY libs/domain/package.json libs/domain/
+COPY libs/shared/package.json libs/shared/
+COPY libs/queue/package.json libs/queue/
+COPY libs/persistence/package.json libs/persistence/
+RUN pnpm install --frozen-lockfile --prod
+
+FROM base AS build
+COPY --from=deps /app/node_modules ./node_modules
+COPY tsconfig.base.json ./
+COPY apps/receiver ./apps/receiver
+COPY libs ./libs
+RUN pnpm --filter @sam/receiver build
+
+FROM node:20-alpine AS runtime
+WORKDIR /app
+COPY --from=build /app/apps/receiver/dist ./dist
+COPY --from=build /app/node_modules ./node_modules
+ENV NODE_ENV=production
+EXPOSE 3001
+CMD ["node", "dist/main.js"]
