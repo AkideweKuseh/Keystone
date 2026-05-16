@@ -9,8 +9,16 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "bullmq": "^5.0.0",
-    "reflect-metadata": "^0.2.0"
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
+    "@sam/auth": "workspace:*",
+    "@sam/drivers-core": "workspace:*",
+    "@sam/drivers-hikvision": "workspace:*",
+    "@sam/drivers-mock": "workspace:*",
+    "@sam/persistence": "workspace:*",
+    "@sam/queue": "workspace:*",
+    "bullmq": "^5.76.9",
+    "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

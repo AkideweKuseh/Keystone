@@ -173,11 +173,35 @@ importers:
 
   apps/worker:
     dependencies:
+      '@nestjs/common':
+        specifier: ^10.0.0
+        version: 10.4.22(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^10.0.0
+        version: 10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@sam/auth':
+        specifier: workspace:*
+        version: link:../../libs/auth
+      '@sam/drivers-core':
+        specifier: workspace:*
+        version: link:../../libs/drivers/core
+      '@sam/drivers-hikvision':
+        specifier: workspace:*
+        version: link:../../libs/drivers/hikvision
+      '@sam/drivers-mock':
+        specifier: workspace:*
+        version: link:../../libs/drivers/mock
+      '@sam/persistence':
+        specifier: workspace:*
+        version: link:../../libs/persistence
+      '@sam/queue':
+        specifier: workspace:*
+        version: link:../../libs/queue
       bullmq:
-        specifier: ^5.0.0
+        specifier: ^5.76.9
         version: 5.76.9
       reflect-metadata:
-        specifier: ^0.2.0
+        specifier: ^0.2.2
         version: 0.2.2
     devDependencies:
       '@types/node':
