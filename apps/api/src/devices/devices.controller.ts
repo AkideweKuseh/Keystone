@@ -71,4 +71,15 @@ export class DevicesController {
   remove(@Request() req: { user: JwtPayload }, @Param('id', ParseUUIDPipe) id: string) {
     return this.devices.softDelete(req.user.tenantId, id);
   }
+
+  @Post(':id/unlock')
+  @Roles('operator')
+  @ApiOperation({ summary: 'Unlock door — synchronous, no queue' })
+  unlock(
+    @Request() req: { user: JwtPayload },
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { door_index?: number },
+  ) {
+    return this.devices.unlockDoor(req.user.tenantId, id, body.door_index ?? 1);
+  }
 }

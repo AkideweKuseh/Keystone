@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { CryptoService } from '@sam/auth';
 import { NotFoundError } from '@sam/domain';
+import { DriverRegistry } from '@sam/drivers-core';
+import { HikvisionDriver } from '@sam/drivers-hikvision';
+import { MockDriver } from '@sam/drivers-mock';
 import { DeviceRepository } from '@sam/persistence';
 import { QUEUE_DEVICE_CAPABILITIES, QUEUE_DEVICE_HEALTH } from '@sam/queue';
 import type { CapabilityDiscoveryJobData, HealthCheckJobData } from '@sam/queue';
@@ -30,10 +33,19 @@ export class DevicesService {
     connection: redisConnection,
   });
 
+  private readonly driverRegistry: DriverRegistry;
+
   constructor(
     private readonly repo: DeviceRepository,
     private readonly crypto: CryptoService,
-  ) {}
+  ) {
+    this.driverRegistry = new DriverRegistry();
+    this.driverRegistry.register('hikvision', (t) => new HikvisionDriver(t));
+    this.driverRegistry.register(
+      'mock',
+      (t) => new MockDriver({ deviceInfo: { model: t.ipAddress } }),
+    );
+  }
 
   async create(tenantId: string, dto: CreateDeviceDto) {
     const passwordEncrypted = this.crypto.encrypt(dto.password);
@@ -91,6 +103,29 @@ export class DevicesService {
     const existing = await this.repo.findById(id);
     if (!existing || existing.tenantId !== tenantId) throw new NotFoundError('Device', id);
     await this.repo.update(id, { status: 'disabled' });
+  }
+
+  async unlockDoor(
+    tenantId: string,
+    deviceId: string,
+    doorIndex: number,
+  ): Promise<{ status: string; device_response_ms: number }> {
+    const device = await this.repo.findById(deviceId);
+    if (!device || device.tenantId !== tenantId) throw new NotFoundError('Device', deviceId);
+
+    const driver = this.driverRegistry.resolve({
+      id: device.id,
+      vendor: device.vendor,
+      ipAddress: device.ipAddress,
+      port: device.port,
+      username: device.username,
+      password: this.crypto.decrypt(Buffer.from(device.passwordEncrypted)),
+      timeoutMs: 3_000,
+    });
+
+    const start = Date.now();
+    await driver.unlockDoor(doorIndex);
+    return { status: 'ok', device_response_ms: Date.now() - start };
   }
 
   // Strip password bytes — NEVER return them
