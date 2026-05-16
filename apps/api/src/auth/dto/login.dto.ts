@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty({ example: 'admin@localhost' })
-  @IsEmail()
+  @IsString()
   email!: string;
 
   @ApiProperty()
@@ -19,5 +19,5 @@ export class LoginDto {
 export class RefreshDto {
   @ApiProperty()
   @IsString()
-  refreshToken!: string;
+  refresh_token!: string;
 }

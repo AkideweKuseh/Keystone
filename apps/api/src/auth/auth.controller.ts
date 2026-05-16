@@ -21,7 +21,7 @@ export class AuthController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Rotate refresh token — returns new token pair' })
   refresh(@Body() dto: RefreshDto) {
-    return this.auth.refresh(dto.refreshToken);
+    return this.auth.refresh(dto.refresh_token);
   }
 
   @Post('logout')
@@ -31,6 +31,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Revoke refresh token' })
   logout(@Body() dto: RefreshDto, @Request() req: { user: JwtPayload }) {
     void req; // actor info available for audit in Phase 2+
-    return this.auth.logout(dto.refreshToken);
+    return this.auth.logout(dto.refresh_token);
   }
 }

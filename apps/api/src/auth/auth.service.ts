@@ -9,9 +9,9 @@ const MAX_FAILED = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
 
 export interface TokenPair {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
 }
 
 @Injectable()
@@ -100,7 +100,7 @@ export class AuthService {
       data: { adminUserId: adminId, tokenHash: this.hashToken(rawRefresh), expiresAt },
     });
 
-    return { accessToken, refreshToken: rawRefresh, expiresIn: 900 };
+    return { access_token: accessToken, refresh_token: rawRefresh, expires_in: 900 };
   }
 
   private hashToken(token: string): string {
