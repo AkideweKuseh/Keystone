@@ -1,6 +1,6 @@
-// Prisma schema — datasource only for Phase 0.
-// Models are added in Phase 1 (see docs/03-database-schema.md).
+// Smart Access Middleware Platform — PostgreSQL schema
 // Connection URL is in prisma.config.ts (Prisma 7+ requirement).
+// See docs/03-database-schema.md for full design rationale.
 
 generator client {
   provider = "prisma-client-js"
@@ -8,4 +8,138 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Tenants ────────────────────────────────────────────────────────────────
+
+model Tenant {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String
+  slug       String      @unique
+  status     String      @default("active")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  sites      Site[]
+  devices    Device[]
+  adminUsers AdminUser[]
+  auditLogs  AuditLog[]
+
+  @@map("tenants")
+}
+
+// ─── Sites ──────────────────────────────────────────────────────────────────
+
+model Site {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  timezone  String   @default("UTC")
+  address   String?
+  vpnSubnet String?  @map("vpn_subnet")
+  createdAt DateTime @default(now()) @map("created_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  devices   Device[]
+
+  @@index([tenantId])
+  @@map("sites")
+}
+
+// ─── Devices ────────────────────────────────────────────────────────────────
+
+model Device {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String            @map("tenant_id") @db.Uuid
+  siteId            String?           @map("site_id") @db.Uuid
+  name              String
+  vendor            String            @default("hikvision")
+  model             String?
+  serialNumber      String?           @map("serial_number")
+  firmwareVersion   String?           @map("firmware_version")
+  ipAddress         String            @map("ip_address")
+  port              Int               @default(80)
+  username          String
+  passwordEncrypted Bytes             @map("password_encrypted")
+  status            String            @default("unknown")
+  lastSeenAt        DateTime?         @map("last_seen_at")
+  lastHealthCheck   DateTime?         @map("last_health_check")
+  metadata          Json              @default("{}") @db.JsonB
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  tenant            Tenant            @relation(fields: [tenantId], references: [id])
+  site              Site?             @relation(fields: [siteId], references: [id])
+  capabilities      DeviceCapability?
+
+  @@unique([tenantId, ipAddress, port])
+  @@index([tenantId, siteId])
+  @@index([status])
+  @@map("devices")
+}
+
+model DeviceCapability {
+  deviceId     String   @id @map("device_id") @db.Uuid
+  supportsJson Boolean  @default(false) @map("supports_json")
+  supportsFace Boolean  @default(false) @map("supports_face")
+  supportsFp   Boolean  @default(false) @map("supports_fp")
+  maxUsers     Int?     @map("max_users")
+  maxCards     Int?     @map("max_cards")
+  raw          Json     @default("{}") @db.JsonB
+  discoveredAt DateTime @default(now()) @map("discovered_at")
+  device       Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@map("device_capabilities")
+}
+
+// ─── Admin users & auth ─────────────────────────────────────────────────────
+
+model AdminUser {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String         @map("tenant_id") @db.Uuid
+  email         String         @unique
+  passwordHash  String         @map("password_hash")
+  role          String
+  mfaSecret     String?        @map("mfa_secret")
+  isActive      Boolean        @default(true) @map("is_active")
+  failedLogins  Int            @default(0) @map("failed_logins")
+  lockedUntil   DateTime?      @map("locked_until")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  refreshTokens RefreshToken[]
+
+  @@index([tenantId])
+  @@map("admin_users")
+}
+
+model RefreshToken {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminUserId String    @map("admin_user_id") @db.Uuid
+  tokenHash   String    @unique @map("token_hash")
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId])
+  @@map("refresh_tokens")
+}
+
+// ─── Audit log ──────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  tenantId  String   @map("tenant_id") @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  actorKind String   @map("actor_kind")
+  action    String
+  resource  String
+  payload   Json     @default("{}") @db.JsonB
+  result    String
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([actorId, createdAt(sort: Desc)])
+  @@map("audit_log")
 }
