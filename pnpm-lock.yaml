@@ -123,6 +123,114 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.41)
 
+  libs/audit:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  libs/auth:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  libs/domain:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  libs/drivers/core:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  libs/drivers/hikvision:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  libs/drivers/mock:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  libs/persistence:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  libs/queue:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  libs/shared:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
 packages:
 
   '@babel/code-frame@7.29.0':
