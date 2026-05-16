@@ -14,16 +14,18 @@ datasource db {
 // ─── Tenants ────────────────────────────────────────────────────────────────
 
 model Tenant {
-  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name       String
-  slug       String      @unique
-  status     String      @default("active")
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
-  sites      Site[]
-  devices    Device[]
-  adminUsers AdminUser[]
-  auditLogs  AuditLog[]
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  slug         String        @unique
+  status       String        @default("active")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  sites        Site[]
+  devices      Device[]
+  adminUsers   AdminUser[]
+  auditLogs    AuditLog[]
+  users        User[]
+  accessGroups AccessGroup[]
 
   @@map("tenants")
 }
@@ -69,6 +71,8 @@ model Device {
   tenant            Tenant            @relation(fields: [tenantId], references: [id])
   site              Site?             @relation(fields: [siteId], references: [id])
   capabilities      DeviceCapability?
+  doors             Door[]
+  deviceUserSyncs   DeviceUserSync[]
 
   @@unique([tenantId, ipAddress, port])
   @@index([tenantId, siteId])
@@ -142,4 +146,118 @@ model AuditLog {
   @@index([tenantId, createdAt(sort: Desc)])
   @@index([actorId, createdAt(sort: Desc)])
   @@map("audit_log")
+}
+
+// ─── Users (access-control end-users, not admins) ───────────────────────────
+
+model User {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String            @map("tenant_id") @db.Uuid
+  employeeNo   String            @map("employee_no")
+  firstName    String?           @map("first_name")
+  lastName     String?           @map("last_name")
+  email        String?
+  phone        String?
+  status       String            @default("active")
+  validFrom    DateTime?         @map("valid_from")
+  validTo      DateTime?         @map("valid_to")
+  revision     Int               @default(0)
+  metadata     Json              @default("{}") @db.JsonB
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  tenant       Tenant            @relation(fields: [tenantId], references: [id])
+  credentials  UserCredential[]
+  deviceSyncs  DeviceUserSync[]
+  accessGroups UserAccessGroup[]
+
+  @@unique([tenantId, employeeNo])
+  @@index([tenantId, status])
+  @@map("users")
+}
+
+model UserCredential {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  type         String
+  cardNumber   String?  @map("card_number")
+  pinHash      String?  @map("pin_hash")
+  faceImageKey String?  @map("face_image_key")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, cardNumber])
+  @@index([userId])
+  @@map("user_credentials")
+}
+
+// ─── Access groups & doors ───────────────────────────────────────────────────
+
+model Door {
+  id         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deviceId   String            @map("device_id") @db.Uuid
+  doorIndex  Int               @map("door_index")
+  name       String
+  openState  String            @default("closed") @map("open_state")
+  device     Device            @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  groupDoors AccessGroupDoor[]
+
+  @@unique([deviceId, doorIndex])
+  @@map("doors")
+}
+
+model AccessGroup {
+  id        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String            @map("tenant_id") @db.Uuid
+  name      String
+  schedule  Json              @default("{}") @db.JsonB
+  createdAt DateTime          @default(now()) @map("created_at")
+  tenant    Tenant            @relation(fields: [tenantId], references: [id])
+  doors     AccessGroupDoor[]
+  users     UserAccessGroup[]
+
+  @@index([tenantId])
+  @@map("access_groups")
+}
+
+model AccessGroupDoor {
+  accessGroupId String      @map("access_group_id") @db.Uuid
+  doorId        String      @map("door_id") @db.Uuid
+  accessGroup   AccessGroup @relation(fields: [accessGroupId], references: [id], onDelete: Cascade)
+  door          Door        @relation(fields: [doorId], references: [id], onDelete: Cascade)
+
+  @@id([accessGroupId, doorId])
+  @@map("access_group_doors")
+}
+
+model UserAccessGroup {
+  userId        String      @map("user_id") @db.Uuid
+  accessGroupId String      @map("access_group_id") @db.Uuid
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessGroup   AccessGroup @relation(fields: [accessGroupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, accessGroupId])
+  @@map("user_access_groups")
+}
+
+// ─── Device-user sync state machine ─────────────────────────────────────────
+
+model DeviceUserSync {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deviceId      String    @map("device_id") @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  desiredState  String    @map("desired_state")
+  currentState  String    @default("unknown") @map("current_state")
+  syncStatus    String    @default("pending") @map("sync_status")
+  revision      Int       @default(0)
+  lastAttemptAt DateTime? @map("last_attempt_at")
+  lastSyncedAt  DateTime? @map("last_synced_at")
+  retryCount    Int       @default(0) @map("retry_count")
+  errorMessage  String?   @map("error_message")
+  device        Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, userId])
+  @@index([syncStatus])
+  @@map("device_user_sync")
 }
