@@ -15,6 +15,7 @@ module.exports = {
   rules: {
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-floating-promises': 'error',
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     'no-console': 'error',
   },
   ignorePatterns: ['dist/', 'node_modules/', '*.js', '*.cjs', '*.mjs', 'prisma/seed.ts'],

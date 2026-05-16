@@ -200,6 +200,10 @@ importers:
         version: 1.6.1(@types/node@20.19.41)
 
   libs/drivers/mock:
+    dependencies:
+      '@sam/drivers-core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
