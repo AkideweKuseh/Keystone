@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "paths": {
+      "@sam/domain": ["../../libs/domain/src"],
+      "@sam/shared": ["../../libs/shared/src"],
+      "@sam/queue": ["../../libs/queue/src"],
+      "@sam/persistence": ["../../libs/persistence/src"],
+      "@sam/drivers-core": ["../../libs/drivers/core/src"],
+      "@sam/drivers-hikvision": ["../../libs/drivers/hikvision/src"],
+      "@sam/drivers-mock": ["../../libs/drivers/mock/src"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

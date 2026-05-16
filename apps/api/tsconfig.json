@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "paths": {
+      "@sam/domain": ["../../libs/domain/src"],
+      "@sam/shared": ["../../libs/shared/src"],
+      "@sam/auth": ["../../libs/auth/src"],
+      "@sam/queue": ["../../libs/queue/src"],
+      "@sam/persistence": ["../../libs/persistence/src"],
+      "@sam/audit": ["../../libs/audit/src"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
