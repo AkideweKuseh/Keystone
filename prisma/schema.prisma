@@ -26,6 +26,7 @@ model Tenant {
   auditLogs    AuditLog[]
   users        User[]
   accessGroups AccessGroup[]
+  accessEvents AccessEvent[]
 
   @@map("tenants")
 }
@@ -50,29 +51,32 @@ model Site {
 // ─── Devices ────────────────────────────────────────────────────────────────
 
 model Device {
-  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String            @map("tenant_id") @db.Uuid
-  siteId            String?           @map("site_id") @db.Uuid
-  name              String
-  vendor            String            @default("hikvision")
-  model             String?
-  serialNumber      String?           @map("serial_number")
-  firmwareVersion   String?           @map("firmware_version")
-  ipAddress         String            @map("ip_address")
-  port              Int               @default(80)
-  username          String
-  passwordEncrypted Bytes             @map("password_encrypted")
-  status            String            @default("unknown")
-  lastSeenAt        DateTime?         @map("last_seen_at")
-  lastHealthCheck   DateTime?         @map("last_health_check")
-  metadata          Json              @default("{}") @db.JsonB
-  createdAt         DateTime          @default(now()) @map("created_at")
-  updatedAt         DateTime          @updatedAt @map("updated_at")
-  tenant            Tenant            @relation(fields: [tenantId], references: [id])
-  site              Site?             @relation(fields: [siteId], references: [id])
-  capabilities      DeviceCapability?
-  doors             Door[]
-  deviceUserSyncs   DeviceUserSync[]
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String            @map("tenant_id") @db.Uuid
+  siteId             String?           @map("site_id") @db.Uuid
+  name               String
+  vendor             String            @default("hikvision")
+  model              String?
+  serialNumber       String?           @map("serial_number")
+  firmwareVersion    String?           @map("firmware_version")
+  ipAddress          String            @map("ip_address")
+  port               Int               @default(80)
+  username           String
+  passwordEncrypted  Bytes             @map("password_encrypted")
+  status             String            @default("unknown")
+  lastSeenAt         DateTime?         @map("last_seen_at")
+  lastHealthCheck    DateTime?         @map("last_health_check")
+  pushToken          String?           @map("push_token")
+  pushTokenExpiresAt DateTime?         @map("push_token_expires_at")
+  eventMode          String            @default("push") @map("event_mode")
+  metadata           Json              @default("{}") @db.JsonB
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  tenant             Tenant            @relation(fields: [tenantId], references: [id])
+  site               Site?             @relation(fields: [siteId], references: [id])
+  capabilities       DeviceCapability?
+  doors              Door[]
+  deviceUserSyncs    DeviceUserSync[]
 
   @@unique([tenantId, ipAddress, port])
   @@index([tenantId, siteId])
@@ -260,4 +264,26 @@ model DeviceUserSync {
   @@unique([deviceId, userId])
   @@index([syncStatus])
   @@map("device_user_sync")
+}
+
+// ─── Access events ───────────────────────────────────────────────────────────
+
+model AccessEvent {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  deviceId     String?  @map("device_id") @db.Uuid
+  doorId       String?  @map("door_id") @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  employeeNo   String?  @map("employee_no")
+  eventType    String   @default("unprocessed") @map("event_type")
+  eventSubtype String?  @map("event_subtype")
+  eventTime    DateTime @default(now()) @map("event_time")
+  rawPayload   Json     @map("raw_payload") @db.JsonB
+  receivedAt   DateTime @default(now()) @map("received_at")
+  dedupKey     String?  @unique @map("dedup_key")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, eventTime(sort: Desc)])
+  @@index([deviceId, eventTime(sort: Desc)])
+  @@map("access_events")
 }
