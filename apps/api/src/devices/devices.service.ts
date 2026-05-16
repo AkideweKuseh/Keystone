@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
+import { randomBytes } from 'crypto';
 import { CryptoService } from '@sam/auth';
 import { NotFoundError } from '@sam/domain';
 import { DriverRegistry } from '@sam/drivers-core';
@@ -49,6 +50,8 @@ export class DevicesService {
 
   async create(tenantId: string, dto: CreateDeviceDto) {
     const passwordEncrypted = this.crypto.encrypt(dto.password);
+    const pushToken = randomBytes(32).toString('hex');
+    const pushTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     const device = await this.repo.create({
       tenant: { connect: { id: tenantId } },
@@ -59,6 +62,8 @@ export class DevicesService {
       port: dto.port,
       username: dto.username,
       passwordEncrypted,
+      pushToken,
+      pushTokenExpiresAt,
       ...(dto.siteId ? { site: { connect: { id: dto.siteId } } } : {}),
     });
 

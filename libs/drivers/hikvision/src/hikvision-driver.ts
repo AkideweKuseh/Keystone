@@ -8,6 +8,7 @@ import type {
   DeviceUserPayload,
   DriverTarget,
   HealthSnapshot,
+  HttpPushConfig,
   ListOpts,
 } from '@sam/drivers-core';
 import { HikvisionHttp } from './hikvision-http';
@@ -124,7 +125,57 @@ export class HikvisionDriver implements AccessDeviceDriver {
     );
   }
 
-  // ─── Phase 3+ stubs ──────────────────────────────────────────────────────
+  async configureHttpPush(config: HttpPushConfig): Promise<void> {
+    const body = {
+      HttpHostNotificationList: {
+        HttpHostNotification: {
+          id: '1',
+          url: config.url,
+          protocolType: 'HTTP',
+          parameterFormatType: 'JSON',
+          httpAuthenticationMethod: 'none',
+          heartbeatInterval: 60,
+          maxIntervalTime: 5,
+          additionalHeaders: [{ name: 'X-Device-Token', value: config.token }],
+          eventType: config.events.join(','),
+        },
+      },
+    };
+    await this.http.put(
+      '/ISAPI/Event/notification/httpHosts',
+      JSON.stringify(body),
+      'application/json',
+    );
+  }
+
+  async pullEvents(since: Date, limit: number): Promise<DeviceEvent[]> {
+    const body = {
+      AcsEventCond: {
+        searchID: '1',
+        searchResultPosition: 0,
+        maxResults: Math.min(limit, 100),
+        major: 0,
+        minor: 0,
+        startTime: since.toISOString(),
+        endTime: new Date().toISOString(),
+      },
+    };
+    const res = await this.http
+      .post<{
+        AcsEvent?: { InfoList?: Record<string, unknown>[] };
+      }>('/ISAPI/AccessControl/AcsEvent?format=json', JSON.stringify(body))
+      .catch(() => ({}) as { AcsEvent?: { InfoList?: Record<string, unknown>[] } });
+    const list = res.AcsEvent?.InfoList ?? [];
+    return list.map((e) => ({
+      eventType: String(e['eventType'] ?? 'unknown'),
+      employeeNo: e['employeeNoString'] ? String(e['employeeNoString']) : undefined,
+      doorIndex: typeof e['doorNo'] === 'number' ? e['doorNo'] : undefined,
+      eventTime: e['time'] ? new Date(String(e['time'])) : new Date(),
+      raw: e,
+    }));
+  }
+
+  // ─── Phase 4+ stubs ──────────────────────────────────────────────────────
 
   upsertFace(_employeeNo: string, _image: Buffer): Promise<void> {
     return Promise.reject(DriverError.unsupported('upsertFace'));
@@ -134,8 +185,5 @@ export class HikvisionDriver implements AccessDeviceDriver {
   }
   lockDoor(_doorIndex: number): Promise<void> {
     return Promise.reject(DriverError.unsupported('lockDoor'));
-  }
-  pullEvents(_since: Date, _limit: number): Promise<DeviceEvent[]> {
-    return Promise.reject(DriverError.unsupported('pullEvents'));
   }
 }
