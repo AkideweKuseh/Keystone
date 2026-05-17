@@ -27,7 +27,7 @@ export class RealtimeGateway implements OnModuleInit {
     // FIXME(any): socket.io Server constructor HttpServer type is opaque — no typed alternative
     /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
     this.io = new Server(httpServer as any, {
-      path: '/ws',
+      path: '/socket.io',
       cors: { origin: '*' },
       adapter: createAdapter(pub, sub) as any,
     });
@@ -73,6 +73,6 @@ export class RealtimeGateway implements OnModuleInit {
       }
     });
 
-    this.log.log('Socket.IO server attached at /ws');
+    this.log.log('Socket.IO server attached at /socket.io');
   }
 }
