@@ -53,5 +53,11 @@
     "@prisma/client": "^5",
     "argon2": "^0.44.0",
     "ts-node": "^10.9.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "multer": ">=2.1.0",
+      "lodash": ">=4.18.0"
+    }
   }
 }
