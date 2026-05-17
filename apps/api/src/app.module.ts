@@ -8,6 +8,7 @@ import { DevicesModule } from './devices/devices.module';
 import { EventsModule } from './events/events.module';
 import { HealthController } from './health/health.controller';
 import { RealtimeModule } from './realtime/realtime.module';
+import { SyncModule } from './sync/sync.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     RealtimeModule,
     EventsModule,
+    SyncModule,
   ],
   controllers: [HealthController],
   providers: [PrismaService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
