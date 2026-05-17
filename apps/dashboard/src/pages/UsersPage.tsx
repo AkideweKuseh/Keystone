@@ -189,7 +189,7 @@ export function UsersPage() {
                     <div key={d.device_id} className="flex items-center gap-2 rounded px-2 py-1.5">
                       <StatusBadge status={status === 'synced' ? 'online' : status === 'failed' ? 'offline' : 'degraded'} />
                       <span className="flex-1 text-xs text-zinc-400">{d.name ?? d.device_id.slice(0, 8)}</span>
-                      {d.errorMessage && <span className="max-w-[120px] truncate text-[10px] text-red-400">{d.errorMessage}</span>}
+                      {(d.errorMessage ?? d.error_message) && <span className="max-w-[120px] truncate text-[10px] text-red-400">{d.errorMessage ?? d.error_message}</span>}
                     </div>
                   );
                 })}
