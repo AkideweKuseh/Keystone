@@ -255,10 +255,10 @@ export function DevicesPage() {
             <h3 className="mb-5 text-[15px] font-semibold text-zinc-50">Register Device</h3>
             <div className="flex flex-col gap-3">
               {([
-                { label: 'Name', key: 'name', placeholder: 'HQ Lobby Reader' },
-                { label: 'IP Address', key: 'ipAddress', placeholder: '10.10.0.21' },
-                { label: 'Port', key: 'port', placeholder: '80' },
-                { label: 'Username', key: 'username', placeholder: 'admin' },
+                { label: 'Name', key: 'name', placeholder: 'HQ Lobby Reader', type: 'text' },
+                { label: 'IP Address', key: 'ipAddress', placeholder: '10.10.0.21', type: 'text' },
+                { label: 'Port', key: 'port', placeholder: '80', type: 'text' },
+                { label: 'Username', key: 'username', placeholder: 'admin', type: 'text' },
                 { label: 'Password', key: 'password', placeholder: '••••••••', type: 'password' },
               ] as const).map(({ label, key, placeholder, type }) => (
                 <div key={key}>
