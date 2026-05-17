@@ -19,17 +19,18 @@ pnpm run dev:api      # start API in dev mode (port 3000)
 
 ## Scripts
 
-| Script                  | Purpose                                       |
-| ----------------------- | --------------------------------------------- |
-| `pnpm run dev:up`       | Start local services (postgres, redis, minio) |
-| `pnpm run dev:down`     | Stop local services                           |
-| `pnpm run dev:api`      | Start API in watch mode                       |
-| `pnpm run dev:worker`   | Start sync worker in watch mode               |
-| `pnpm run dev:receiver` | Start event receiver in watch mode            |
-| `pnpm lint`             | Run ESLint across all packages                |
-| `pnpm typecheck`        | Run TypeScript typecheck across all packages  |
-| `pnpm test`             | Run all tests                                 |
-| `pnpm build`            | Build all apps                                |
+| Script                   | Purpose                                       |
+| ------------------------ | --------------------------------------------- |
+| `pnpm run dev:up`        | Start local services (postgres, redis, minio) |
+| `pnpm run dev:down`      | Stop local services                           |
+| `pnpm run dev:api`       | Start API in watch mode                       |
+| `pnpm run dev:worker`    | Start sync worker in watch mode               |
+| `pnpm run dev:receiver`  | Start event receiver in watch mode            |
+| `pnpm run dev:dashboard` | Start admin dashboard dev server (port 5173)  |
+| `pnpm lint`              | Run ESLint across all packages                |
+| `pnpm typecheck`         | Run TypeScript typecheck across all packages  |
+| `pnpm test`              | Run all tests                                 |
+| `pnpm build`             | Build all apps                                |
 
 ## Documentation
 
@@ -46,6 +47,7 @@ apps/
   api/        — NestJS REST + WebSocket server
   worker/     — BullMQ sync worker processes
   receiver/   — Device event ingestion endpoint
+  dashboard/  — Vite + React admin UI (port 5173)
 libs/
   domain/     — Pure domain logic (no I/O)
   drivers/
