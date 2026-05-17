@@ -18,5 +18,5 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     'no-console': 'error',
   },
-  ignorePatterns: ['dist/', 'node_modules/', '*.js', '*.cjs', '*.mjs', 'prisma/seed.ts', 'apps/dashboard/**'],
+  ignorePatterns: ['dist/', 'node_modules/', '*.js', '*.cjs', '*.mjs', 'prisma/seed.ts', 'prisma.config.ts', 'apps/dashboard/**'],
 };

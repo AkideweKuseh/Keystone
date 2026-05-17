@@ -46,5 +46,6 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma generate
       - run: pnpm exec prisma migrate deploy
       - run: pnpm test
