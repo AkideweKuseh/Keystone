@@ -46,13 +46,13 @@ export function EventsPage() {
   useEffect(() => {
     const socket = socketRef.current;
     socket.on('event', (e: ApiEvent) => {
-      if (!paused) {
+      if (!paused && (typeFilter === 'all' || e.eventType === typeFilter)) {
         setLiveEvents(prev => [{ ...e, isNew: true }, ...prev].slice(0, 50));
         setTimeout(() => setLiveEvents(prev => prev.map(x => x.id === e.id ? { ...x, isNew: false } : x)), 3000);
       }
     });
     return () => { socket.off('event'); };
-  }, [paused]);
+  }, [paused, typeFilter]);
 
   // Detect manual scroll to pause
   useEffect(() => {
