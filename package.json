@@ -10,6 +10,7 @@
     "dev:api": "pnpm --filter @sam/api dev",
     "dev:worker": "pnpm --filter @sam/worker dev",
     "dev:receiver": "pnpm --filter @sam/receiver dev",
+    "dev:dashboard": "pnpm --filter @sam/dashboard dev",
     "dev:all": "concurrently --names \"api,worker,receiver\" --prefix-colors \"cyan,yellow,green\" \"pnpm dev:api\" \"pnpm dev:worker\" \"pnpm dev:receiver\"",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
