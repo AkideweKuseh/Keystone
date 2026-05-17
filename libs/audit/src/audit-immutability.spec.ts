@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 
 // This test only runs when DATABASE_URL is set (integration mode).
@@ -7,6 +7,8 @@ import { PrismaClient } from '@prisma/client';
 // tests are skipped in that environment. They are valid against a production
 // schema where an unprivileged app role is used (see prisma/sql/audit-log-immutability.sql).
 const DATABASE_URL = process.env['DATABASE_URL'];
+
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 describe.skipIf(!DATABASE_URL)('audit log immutability (integration)', () => {
   const prisma = new PrismaClient();
@@ -17,12 +19,24 @@ describe.skipIf(!DATABASE_URL)('audit log immutability (integration)', () => {
       SELECT rolsuper AS is_superuser FROM pg_roles WHERE rolname = current_user
     `;
     isSuperuser = result[0]?.is_superuser ?? false;
+
+    // Ensure test tenant exists — audit_log has a FK to tenant.
+    // CI starts with a fresh DB so we create it here.
+    await prisma.tenant.upsert({
+      where: { id: TEST_TENANT_ID },
+      create: { id: TEST_TENANT_ID, name: 'CI Test Tenant', slug: 'ci-test-tenant' },
+      update: {},
+    });
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
   });
 
   it('app role can INSERT into audit_log', async () => {
     const row = await prisma.auditLog.create({
       data: {
-        tenantId: '00000000-0000-0000-0000-000000000001',
+        tenantId: TEST_TENANT_ID,
         actorKind: 'system',
         action: 'test.immutability',
         resource: 'test',
