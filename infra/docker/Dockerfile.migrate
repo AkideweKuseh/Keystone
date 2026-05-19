@@ -1,0 +1,27 @@
+# One-shot container that runs Prisma migrations.
+# Started before api/worker/receiver; exits 0 on success.
+FROM node:20-alpine
+WORKDIR /app
+RUN npm install -g pnpm@9
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json       apps/api/
+COPY apps/worker/package.json    apps/worker/
+COPY apps/receiver/package.json  apps/receiver/
+COPY apps/dashboard/package.json apps/dashboard/
+COPY libs/domain/package.json        libs/domain/
+COPY libs/shared/package.json        libs/shared/
+COPY libs/auth/package.json          libs/auth/
+COPY libs/queue/package.json         libs/queue/
+COPY libs/persistence/package.json   libs/persistence/
+COPY libs/audit/package.json         libs/audit/
+COPY libs/drivers/core/package.json      libs/drivers/core/
+COPY libs/drivers/hikvision/package.json libs/drivers/hikvision/
+COPY libs/drivers/mock/package.json      libs/drivers/mock/
+
+# devDeps needed for prisma CLI (it lives in root devDependencies)
+RUN pnpm install --frozen-lockfile
+
+COPY prisma ./prisma
+
+CMD ["node_modules/.bin/prisma", "migrate", "deploy"]

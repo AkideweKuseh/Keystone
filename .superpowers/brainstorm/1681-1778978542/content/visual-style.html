@@ -1,0 +1,126 @@
+<h2>Which visual direction feels right for the dashboard?</h2>
+<p class="subtitle">All three are professional and clean — pick the one that fits your brand best.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="slate" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;font-family:system-ui;border-radius:6px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div>
+        <span style="color:#94a3b8;font-size:11px;letter-spacing:1px;text-transform:uppercase;">Smart Access</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <div style="flex:1;background:#1e293b;border-radius:4px;padding:10px;">
+          <div style="color:#64748b;font-size:9px;margin-bottom:4px;">DEVICES ONLINE</div>
+          <div style="color:#f1f5f9;font-size:20px;font-weight:700;">24</div>
+          <div style="color:#22c55e;font-size:9px;">↑ 2 today</div>
+        </div>
+        <div style="flex:1;background:#1e293b;border-radius:4px;padding:10px;">
+          <div style="color:#64748b;font-size:9px;margin-bottom:4px;">ACCESS EVENTS</div>
+          <div style="color:#f1f5f9;font-size:20px;font-weight:700;">1,204</div>
+          <div style="color:#3b82f6;font-size:9px;">last 24h</div>
+        </div>
+      </div>
+      <div style="background:#1e293b;border-radius:4px;padding:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="color:#94a3b8;font-size:9px;">RECENT EVENTS</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #334155;">
+          <div style="width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0"></div>
+          <span style="color:#cbd5e1;font-size:9px;">Ada L. — Lobby Reader</span>
+          <span style="color:#475569;font-size:8px;margin-left:auto;">2s ago</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:4px 0;">
+          <div style="width:6px;height:6px;border-radius:50%;background:#ef4444;flex-shrink:0"></div>
+          <span style="color:#cbd5e1;font-size:9px;">Unknown — Gate B</span>
+          <span style="color:#475569;font-size:8px;margin-left:auto;">14s ago</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Dark Command Center</h3>
+      <p>Deep navy/slate palette. High contrast. Feels like security software — authoritative and focused. Great for 24/7 monitoring environments.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="light" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc;padding:16px;font-family:system-ui;border-radius:6px;border:1px solid #e2e8f0;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#2563eb"></div>
+        <span style="color:#475569;font-size:11px;letter-spacing:1px;text-transform:uppercase;">Smart Access</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <div style="flex:1;background:#fff;border-radius:4px;padding:10px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+          <div style="color:#94a3b8;font-size:9px;margin-bottom:4px;">DEVICES ONLINE</div>
+          <div style="color:#0f172a;font-size:20px;font-weight:700;">24</div>
+          <div style="color:#16a34a;font-size:9px;">↑ 2 today</div>
+        </div>
+        <div style="flex:1;background:#fff;border-radius:4px;padding:10px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+          <div style="color:#94a3b8;font-size:9px;margin-bottom:4px;">ACCESS EVENTS</div>
+          <div style="color:#0f172a;font-size:20px;font-weight:700;">1,204</div>
+          <div style="color:#2563eb;font-size:9px;">last 24h</div>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:4px;padding:8px;border:1px solid #e2e8f0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="color:#94a3b8;font-size:9px;">RECENT EVENTS</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #f1f5f9;">
+          <div style="width:6px;height:6px;border-radius:50%;background:#16a34a;flex-shrink:0"></div>
+          <span style="color:#334155;font-size:9px;">Ada L. — Lobby Reader</span>
+          <span style="color:#94a3b8;font-size:8px;margin-left:auto;">2s ago</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:4px 0;">
+          <div style="width:6px;height:6px;border-radius:50%;background:#dc2626;flex-shrink:0"></div>
+          <span style="color:#334155;font-size:9px;">Unknown — Gate B</span>
+          <span style="color:#94a3b8;font-size:8px;margin-left:auto;">14s ago</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Clean Light</h3>
+      <p>White cards on light grey. Blue accent. Feels like modern SaaS (Stripe, Linear, Vercel). Easy on the eyes for daytime use. Most familiar to business users.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="midnight" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#09090b;padding:16px;font-family:system-ui;border-radius:6px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#a855f7"></div>
+        <span style="color:#71717a;font-size:11px;letter-spacing:1px;text-transform:uppercase;">Smart Access</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <div style="flex:1;background:#18181b;border-radius:4px;padding:10px;border:1px solid #27272a;">
+          <div style="color:#52525b;font-size:9px;margin-bottom:4px;">DEVICES ONLINE</div>
+          <div style="color:#fafafa;font-size:20px;font-weight:700;">24</div>
+          <div style="color:#22c55e;font-size:9px;">↑ 2 today</div>
+        </div>
+        <div style="flex:1;background:#18181b;border-radius:4px;padding:10px;border:1px solid #27272a;">
+          <div style="color:#52525b;font-size:9px;margin-bottom:4px;">ACCESS EVENTS</div>
+          <div style="color:#fafafa;font-size:20px;font-weight:700;">1,204</div>
+          <div style="color:#a855f7;font-size:9px;">last 24h</div>
+        </div>
+      </div>
+      <div style="background:#18181b;border-radius:4px;padding:8px;border:1px solid #27272a;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="color:#52525b;font-size:9px;">RECENT EVENTS</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #27272a;">
+          <div style="width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0"></div>
+          <span style="color:#d4d4d8;font-size:9px;">Ada L. — Lobby Reader</span>
+          <span style="color:#52525b;font-size:8px;margin-left:auto;">2s ago</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:4px 0;">
+          <div style="width:6px;height:6px;border-radius:50%;background:#ef4444;flex-shrink:0"></div>
+          <span style="color:#d4d4d8;font-size:9px;">Unknown — Gate B</span>
+          <span style="color:#52525b;font-size:8px;margin-left:auto;">14s ago</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Midnight Dark</h3>
+      <p>True black with zinc tones and purple accent. Premium, modern feel (Vercel dashboard, shadcn). Popular with security professionals. Easy on screens at night.</p>
+    </div>
+  </div>
+
+</div>

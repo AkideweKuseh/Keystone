@@ -1,29 +1,58 @@
-FROM node:20-alpine AS base
+# ── Stage 1: build ────────────────────────────────────────────────────────────
+FROM node:20-alpine AS build
 WORKDIR /app
 RUN npm install -g pnpm@9
 
-FROM base AS deps
+# Copy all workspace package manifests so pnpm resolves the full workspace graph
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY apps/api/package.json apps/api/
-COPY libs/domain/package.json libs/domain/
-COPY libs/shared/package.json libs/shared/
-COPY libs/auth/package.json libs/auth/
-COPY libs/queue/package.json libs/queue/
-COPY libs/persistence/package.json libs/persistence/
-COPY libs/audit/package.json libs/audit/
-RUN pnpm install --frozen-lockfile --prod
+COPY apps/api/package.json       apps/api/
+COPY apps/worker/package.json    apps/worker/
+COPY apps/receiver/package.json  apps/receiver/
+COPY apps/dashboard/package.json apps/dashboard/
+COPY libs/domain/package.json        libs/domain/
+COPY libs/shared/package.json        libs/shared/
+COPY libs/auth/package.json          libs/auth/
+COPY libs/queue/package.json         libs/queue/
+COPY libs/persistence/package.json   libs/persistence/
+COPY libs/audit/package.json         libs/audit/
+COPY libs/drivers/core/package.json      libs/drivers/core/
+COPY libs/drivers/hikvision/package.json libs/drivers/hikvision/
+COPY libs/drivers/mock/package.json      libs/drivers/mock/
 
-FROM base AS build
-COPY --from=deps /app/node_modules ./node_modules
+# Install ALL deps — devDeps are required for TypeScript compilation
+RUN pnpm install --frozen-lockfile
+
+# Copy source
 COPY tsconfig.base.json ./
-COPY apps/api ./apps/api
+COPY prisma ./prisma
 COPY libs ./libs
-RUN pnpm --filter @sam/api build
+COPY apps/api ./apps/api
 
+# Build libs in dependency order, then the API
+RUN pnpm --filter @sam/domain build \
+ && pnpm --filter @sam/shared build \
+ && pnpm --filter @sam/auth build \
+ && pnpm --filter @sam/queue build \
+ && pnpm --filter @sam/persistence build \
+ && pnpm --filter @sam/audit build \
+ && pnpm --filter @sam/drivers-core build \
+ && pnpm --filter @sam/drivers-hikvision build \
+ && pnpm --filter @sam/drivers-mock build \
+ && pnpm --filter @sam/api build
+
+# Generate Prisma client for linux-musl (Alpine matches build + runtime)
+RUN DATABASE_URL=postgresql://u:p@localhost:5432/db pnpm prisma generate
+
+# Create standalone deployment: workspace deps become real dirs, not symlinks
+RUN pnpm deploy --filter @sam/api --prod /deploy/api
+
+# Carry the generated query engine into the deployment
+RUN cp -r node_modules/.prisma /deploy/api/node_modules/.prisma
+
+# ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
 WORKDIR /app
-COPY --from=build /app/apps/api/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /deploy/api .
 ENV NODE_ENV=production
 EXPOSE 3000
 CMD ["node", "dist/main.js"]

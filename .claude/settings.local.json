@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(pnpm *)",
+      "PowerShell(cd \"D:\\\\Blaze\\\\hikvision-Sync-server\\\\apps\\\\api\"; $env:DATABASE_URL=\"postgresql://app:app@localhost:15432/sam\"; $env:REDIS_URL=\"redis://localhost:6379\"; $env:JWT_ACCESS_SECRET=\"dev-secret-for-testing\"; $env:JWT_REFRESH_SECRET=\"dev-refresh-secret\"; $env:DEVICE_SECRET_KEY=\"base64:\" + [Convert]::ToBase64String\\([byte[]]\\(1..32\\)\\); npx ts-node -r tsconfig-paths/register src/main.ts 2>&1 | Select-Object -First 15)",
+      "PowerShell(cd \"D:\\\\Blaze\\\\hikvision-Sync-server\\\\apps\\\\api\"; $env:DATABASE_URL=\"postgresql://app:app@localhost:15432/sam\"; $env:REDIS_URL=\"redis://localhost:6379\"; $env:JWT_ACCESS_SECRET=\"dev-secret-for-testing\"; $env:JWT_REFRESH_SECRET=\"dev-refresh-secret\"; $env:DEVICE_SECRET_KEY=\"base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"; npx ts-node -r tsconfig-paths/register src/main.ts 2>&1)",
+      "PowerShell(Start-Sleep 8; Invoke-WebRequest -Uri \"http://localhost:3000/health\" -UseBasicParsing -ErrorAction SilentlyContinue | Select-Object StatusCode, Content)",
+      "Skill(superpowers:brainstorming)",
+      "Bash(C:\\\\Users\\\\kuseh\\\\.claude\\\\plugins\\\\cache\\\\claude-plugins-official\\\\superpowers\\\\5.1.0\\\\skills\\\\brainstorming\\\\scripts\\\\start-server.sh *)",
+      "Bash(xargs cat)",
+      "Bash(/c/Users/kuseh/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/brainstorming/scripts/start-server.sh *)",
+      "PowerShell(New-Item *)",
+      "Skill(superpowers:writing-plans)",
+      "Skill(superpowers:subagent-driven-development)",
+      "Bash(New-Item *)",
+      "Bash(git *)",
+      "Bash(Out-Null)",
+      "Bash(findstr /i \"method\\\\|async\\\\|unlock\\\\|face\\\\|user\\\\|event\\\\|ping\\\\|push\\\\|config\")"
+    ]
+  }
+}

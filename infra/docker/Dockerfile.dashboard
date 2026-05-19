@@ -1,0 +1,32 @@
+# ── Stage 1: build React app ──────────────────────────────────────────────────
+FROM node:20-alpine AS build
+WORKDIR /app
+RUN npm install -g pnpm@9
+
+# Dashboard has no @sam/* workspace deps — install only what it needs
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json       apps/api/
+COPY apps/worker/package.json    apps/worker/
+COPY apps/receiver/package.json  apps/receiver/
+COPY apps/dashboard/package.json apps/dashboard/
+COPY libs/domain/package.json        libs/domain/
+COPY libs/shared/package.json        libs/shared/
+COPY libs/auth/package.json          libs/auth/
+COPY libs/queue/package.json         libs/queue/
+COPY libs/persistence/package.json   libs/persistence/
+COPY libs/audit/package.json         libs/audit/
+COPY libs/drivers/core/package.json      libs/drivers/core/
+COPY libs/drivers/hikvision/package.json libs/drivers/hikvision/
+COPY libs/drivers/mock/package.json      libs/drivers/mock/
+
+RUN pnpm install --frozen-lockfile
+
+COPY apps/dashboard ./apps/dashboard
+
+RUN pnpm --filter @sam/dashboard build
+
+# ── Stage 2: serve with nginx ─────────────────────────────────────────────────
+FROM nginx:alpine AS runtime
+COPY --from=build /app/apps/dashboard/dist /usr/share/nginx/html
+COPY infra/docker/nginx.dashboard.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
