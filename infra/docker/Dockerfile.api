@@ -45,6 +45,8 @@ RUN pnpm --filter @sam/domain build \
 
 # Create standalone deployment: workspace deps become real dirs, not symlinks
 RUN pnpm deploy --filter @sam/api --prod /deploy/api
+# pnpm deploy excludes dist/ because it's in .gitignore — copy it explicitly
+RUN cp -r apps/api/dist /deploy/api/dist
 
 # Generate Prisma engine binary inside the deploy (pnpm deploy doesn't copy
 # the engine from the virtual store — re-generating from there is cleaner)
