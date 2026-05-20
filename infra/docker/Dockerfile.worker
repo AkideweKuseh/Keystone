@@ -38,6 +38,12 @@ RUN pnpm --filter @sam/domain build \
  && pnpm --filter @sam/drivers-mock build \
  && pnpm --filter @sam/worker build
 
+RUN for d in libs/domain libs/shared libs/auth libs/queue libs/persistence \
+             libs/audit libs/drivers/core libs/drivers/hikvision libs/drivers/mock; do \
+      : > $d/.npmignore; \
+      node -e "const f='$d/package.json',p=require(f);p.main='dist/index.js';require('fs').writeFileSync(f,JSON.stringify(p,null,2))"; \
+    done
+
 RUN pnpm deploy --filter @sam/worker --prod /deploy/worker
 RUN cp -r apps/worker/dist /deploy/worker/dist
 

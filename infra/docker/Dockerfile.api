@@ -43,9 +43,18 @@ RUN pnpm --filter @sam/domain build \
  && pnpm --filter @sam/drivers-mock build \
  && pnpm --filter @sam/api build
 
+# Prepare libs for deployment:
+#   - empty .npmignore overrides root .gitignore so dist/ gets included
+#   - set main to dist/index.js so Node resolves compiled JS not TypeScript source
+RUN for d in libs/domain libs/shared libs/auth libs/queue libs/persistence \
+             libs/audit libs/drivers/core libs/drivers/hikvision libs/drivers/mock; do \
+      : > $d/.npmignore; \
+      node -e "const f='$d/package.json',p=require(f);p.main='dist/index.js';require('fs').writeFileSync(f,JSON.stringify(p,null,2))"; \
+    done
+
 # Create standalone deployment: workspace deps become real dirs, not symlinks
 RUN pnpm deploy --filter @sam/api --prod /deploy/api
-# pnpm deploy excludes dist/ because it's in .gitignore — copy it explicitly
+# Copy app dist (excluded by .gitignore even with files field in pnpm deploy)
 RUN cp -r apps/api/dist /deploy/api/dist
 
 # Generate Prisma engine binary inside the deploy (pnpm deploy doesn't copy
