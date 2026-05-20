@@ -28,6 +28,9 @@ COPY prisma ./prisma
 COPY libs ./libs
 COPY apps/api ./apps/api
 
+# Generate Prisma client first — persistence lib needs the types to compile
+RUN DATABASE_URL=postgresql://u:p@localhost:5432/db pnpm prisma generate
+
 # Build libs in dependency order, then the API
 RUN pnpm --filter @sam/domain build \
  && pnpm --filter @sam/shared build \
@@ -39,9 +42,6 @@ RUN pnpm --filter @sam/domain build \
  && pnpm --filter @sam/drivers-hikvision build \
  && pnpm --filter @sam/drivers-mock build \
  && pnpm --filter @sam/api build
-
-# Generate Prisma client for linux-musl (Alpine matches build + runtime)
-RUN DATABASE_URL=postgresql://u:p@localhost:5432/db pnpm prisma generate
 
 # Create standalone deployment: workspace deps become real dirs, not symlinks
 RUN pnpm deploy --filter @sam/api --prod /deploy/api

@@ -25,6 +25,8 @@ COPY prisma ./prisma
 COPY libs ./libs
 COPY apps/receiver ./apps/receiver
 
+RUN DATABASE_URL=postgresql://u:p@localhost:5432/db pnpm prisma generate
+
 RUN pnpm --filter @sam/domain build \
  && pnpm --filter @sam/shared build \
  && pnpm --filter @sam/auth build \
@@ -34,8 +36,6 @@ RUN pnpm --filter @sam/domain build \
  && pnpm --filter @sam/drivers-hikvision build \
  && pnpm --filter @sam/drivers-mock build \
  && pnpm --filter @sam/receiver build
-
-RUN DATABASE_URL=postgresql://u:p@localhost:5432/db pnpm prisma generate
 
 RUN pnpm deploy --filter @sam/receiver --prod /deploy/receiver
 RUN cp -r node_modules/.prisma /deploy/receiver/node_modules/.prisma
