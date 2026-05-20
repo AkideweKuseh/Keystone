@@ -2,6 +2,7 @@
 # Started before api/worker/receiver; exits 0 on success.
 FROM node:20-alpine
 WORKDIR /app
+RUN apk add --no-cache openssl
 RUN npm install -g pnpm@9
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./

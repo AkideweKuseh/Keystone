@@ -47,6 +47,7 @@ RUN cp -r prisma /deploy/receiver/prisma \
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
 WORKDIR /app
+RUN apk add --no-cache openssl
 COPY --from=build /deploy/receiver .
 ENV NODE_ENV=production
 EXPOSE 3001
