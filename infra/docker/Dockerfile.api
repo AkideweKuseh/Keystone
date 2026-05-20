@@ -62,4 +62,4 @@ RUN apk add --no-cache openssl
 COPY --from=build /deploy/api .
 ENV NODE_ENV=production
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/apps/api/src/main.js"]
