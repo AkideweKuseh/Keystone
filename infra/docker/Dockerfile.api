@@ -50,7 +50,7 @@ RUN pnpm deploy --filter @sam/api --prod /deploy/api
 # the engine from the virtual store — re-generating from there is cleaner)
 RUN cp -r prisma /deploy/api/prisma \
  && cd /deploy/api \
- && DATABASE_URL=postgresql://u:p@localhost:5432/db node /app/node_modules/.bin/prisma generate \
+ && DATABASE_URL=postgresql://u:p@localhost:5432/db /app/node_modules/.bin/prisma generate \
  && rm -rf prisma
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
