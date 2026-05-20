@@ -46,8 +46,12 @@ RUN pnpm --filter @sam/domain build \
 # Create standalone deployment: workspace deps become real dirs, not symlinks
 RUN pnpm deploy --filter @sam/api --prod /deploy/api
 
-# Carry the generated query engine into the deployment
-RUN cp -r node_modules/.prisma /deploy/api/node_modules/.prisma
+# Generate Prisma engine binary inside the deploy (pnpm deploy doesn't copy
+# the engine from the virtual store — re-generating from there is cleaner)
+RUN cp -r prisma /deploy/api/prisma \
+ && cd /deploy/api \
+ && DATABASE_URL=postgresql://u:p@localhost:5432/db node /app/node_modules/.bin/prisma generate \
+ && rm -rf prisma
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime

@@ -39,7 +39,11 @@ RUN pnpm --filter @sam/domain build \
  && pnpm --filter @sam/worker build
 
 RUN pnpm deploy --filter @sam/worker --prod /deploy/worker
-RUN cp -r node_modules/.prisma /deploy/worker/node_modules/.prisma
+
+RUN cp -r prisma /deploy/worker/prisma \
+ && cd /deploy/worker \
+ && DATABASE_URL=postgresql://u:p@localhost:5432/db node /app/node_modules/.bin/prisma generate \
+ && rm -rf prisma
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
