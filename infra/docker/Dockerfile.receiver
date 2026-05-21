@@ -37,11 +37,16 @@ RUN pnpm --filter @sam/domain build \
  && pnpm --filter @sam/drivers-mock build \
  && pnpm --filter @sam/receiver build
 
-RUN for d in libs/domain libs/shared libs/auth libs/queue libs/persistence \
-             libs/audit libs/drivers/core libs/drivers/hikvision libs/drivers/mock; do \
+RUN for d in libs/domain libs/shared libs/auth libs/queue libs/persistence libs/drivers/core; do \
       touch "$d/.npmignore"; \
       sed -i 's|"main": "src/index.ts"|"main": "dist/index.js"|' "$d/package.json"; \
-    done
+    done && \
+    touch libs/audit/.npmignore && \
+    sed -i 's|"main": "src/index.ts"|"main": "dist/audit/src/index.js"|' libs/audit/package.json && \
+    touch libs/drivers/hikvision/.npmignore && \
+    sed -i 's|"main": "src/index.ts"|"main": "dist/hikvision/src/index.js"|' libs/drivers/hikvision/package.json && \
+    touch libs/drivers/mock/.npmignore && \
+    sed -i 's|"main": "src/index.ts"|"main": "dist/mock/src/index.js"|' libs/drivers/mock/package.json
 
 RUN pnpm deploy --filter @sam/receiver --prod /deploy/receiver
 RUN cp -r apps/receiver/dist /deploy/receiver/dist
