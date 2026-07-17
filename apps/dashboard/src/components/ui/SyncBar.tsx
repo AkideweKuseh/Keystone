@@ -7,7 +7,7 @@ interface SyncBarProps {
 
 export function SyncBar({ synced, pending, failed }: SyncBarProps) {
   const total = synced + pending + failed;
-  if (total === 0) return <span className="text-xs text-zinc-600">—</span>;
+  if (total === 0) return <span className="text-xs text-zinc-500">—</span>;
 
   const pctSynced  = (synced  / total) * 100;
   const pctPending = (pending / total) * 100;
@@ -16,11 +16,11 @@ export function SyncBar({ synced, pending, failed }: SyncBarProps) {
   return (
     <div className="flex items-center gap-2">
       <div className="flex h-1.5 w-20 overflow-hidden rounded-full bg-zinc-800">
-        {pctSynced  > 0 && <div className="bg-green-500" style={{ width: `${pctSynced}%` }} />}
-        {pctPending > 0 && <div className="bg-amber-500" style={{ width: `${pctPending}%` }} />}
-        {pctFailed  > 0 && <div className="bg-red-500"   style={{ width: `${pctFailed}%` }} />}
+        {pctSynced  > 0 && <div className="bg-emerald-500" style={{ width: `${pctSynced}%` }} />}
+        {pctPending > 0 && <div className="bg-amber-500"   style={{ width: `${pctPending}%` }} />}
+        {pctFailed  > 0 && <div className="bg-rose-500"    style={{ width: `${pctFailed}%` }} />}
       </div>
-      <span className="text-xs text-zinc-500">{synced}/{total}</span>
+      <span className="text-xs font-medium tabular text-zinc-400">{synced}/{total}</span>
     </div>
   );
 }

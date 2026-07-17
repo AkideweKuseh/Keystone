@@ -37,8 +37,8 @@ export function AppShell() {
 
   if (restoring) {
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-700 border-t-purple-500" />
+      <div className="flex h-screen items-center justify-center bg-ambient">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-800 border-t-brand-violet" />
       </div>
     );
   }
@@ -46,7 +46,7 @@ export function AppShell() {
   if (!auth.isLoggedIn()) return <Navigate to="/login" replace />;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-950">
+    <div className="flex h-screen overflow-hidden bg-ambient">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Outlet />

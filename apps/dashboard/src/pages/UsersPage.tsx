@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, RefreshCw, Search } from 'lucide-react';
+import { Plus, RefreshCw, Search, X } from 'lucide-react';
 import { Topbar } from '@/components/layout/Topbar';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { SyncBar } from '@/components/ui/SyncBar';
@@ -32,6 +32,8 @@ interface SyncStatus {
     error_message?: string;
   }>;
 }
+
+const inputCls = 'w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-50 placeholder:text-zinc-500 transition focus:border-brand-violet focus:outline-none focus:ring-4 focus:ring-brand-violet/15';
 
 export function UsersPage() {
   const qc = useQueryClient();
@@ -86,6 +88,14 @@ export function UsersPage() {
     [u.employeeNo, u.firstName, u.lastName, u.email].some(v => v?.toLowerCase().includes(search.toLowerCase()))
   );
 
+  // Close the add-user modal on Escape
+  useEffect(() => {
+    if (!showAdd) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowAdd(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showAdd]);
+
   function getSyncSummary(_userId: string) {
     return { synced: 0, pending: 0, failed: 0 };
   }
@@ -102,17 +112,17 @@ export function UsersPage() {
         actions={
           <>
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search…"
-                className="rounded-lg border border-zinc-700 bg-zinc-800/60 py-1.5 pl-8 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-purple-500 focus:outline-none w-48"
+                className="w-48 rounded-xl border border-zinc-800 bg-zinc-900 py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder:text-zinc-500 transition focus:border-brand-violet focus:outline-none focus:ring-4 focus:ring-brand-violet/15"
               />
             </div>
             <button
               onClick={() => setShowAdd(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700 transition-colors"
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#6366f1] px-3.5 py-2 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(168,85,247,0.7)]"
             >
               <Plus className="h-3.5 w-3.5" /> Add User
             </button>
@@ -120,16 +130,16 @@ export function UsersPage() {
         }
       />
 
-      <div className="flex-1 overflow-auto p-6">
-        <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+      <div className="flex-1 overflow-auto bg-ambient p-6">
+        <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-card">
           {isLoading ? (
-            <div className="flex items-center justify-center py-20 text-sm text-zinc-600">Loading…</div>
+            <div className="flex items-center justify-center py-20 text-sm text-zinc-500">Loading…</div>
           ) : (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-zinc-800">
                   {['Employee No', 'Name', 'Email', 'Status', 'Sync Health'].map(h => (
-                    <th key={h} className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-600">{h}</th>
+                    <th key={h} className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-500">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -140,13 +150,13 @@ export function UsersPage() {
                     <tr
                       key={u.id}
                       onClick={() => setSelected(u)}
-                      className="cursor-pointer border-b border-zinc-800/50 hover:bg-zinc-800/40 transition-colors last:border-0"
+                      className="cursor-pointer border-b border-zinc-800/50 transition-colors last:border-0 hover:bg-zinc-800/40"
                     >
                       <td className="px-5 py-3 font-mono text-[12px] text-zinc-400">{u.employeeNo}</td>
-                      <td className="px-5 py-3 text-[13px] font-semibold text-zinc-100">
+                      <td className="px-5 py-3 text-[13px] font-semibold text-zinc-50">
                         {[u.firstName, u.lastName].filter(Boolean).join(' ') || '—'}
                       </td>
-                      <td className="px-5 py-3 text-[13px] text-zinc-500">{u.email ?? '—'}</td>
+                      <td className="px-5 py-3 text-[13px] text-zinc-400">{u.email ?? '—'}</td>
                       <td className="px-5 py-3"><StatusBadge status={u.status} /></td>
                       <td className="px-5 py-3"><SyncBar synced={synced} pending={pending} failed={failed} /></td>
                     </tr>
@@ -154,7 +164,7 @@ export function UsersPage() {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-5 py-12 text-center text-sm text-zinc-600">
+                    <td colSpan={5} className="px-5 py-12 text-center text-sm text-zinc-500">
                       {search ? 'No users match your search.' : 'No users yet.'}
                     </td>
                   </tr>
@@ -171,25 +181,25 @@ export function UsersPage() {
           <div className="flex flex-col gap-5">
             <div className="flex items-center gap-3">
               <StatusBadge status={selected.status} />
-              <span className="font-mono text-xs text-zinc-500">{selected.employeeNo}</span>
+              <span className="font-mono text-xs text-zinc-400">{selected.employeeNo}</span>
             </div>
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">Sync Status</p>
-                <span className="text-xs text-zinc-500">{syncSynced}/{syncDevices.length} synced</span>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Sync Status</p>
+                <span className="text-xs text-zinc-400">{syncSynced}/{syncDevices.length} synced</span>
               </div>
-              <div className="flex flex-col gap-1.5 rounded-lg border border-zinc-800 p-2">
+              <div className="flex flex-col gap-1.5 rounded-xl border border-zinc-800 p-2">
                 {syncDevices.length === 0 && (
-                  <p className="py-3 text-center text-xs text-zinc-600">No devices assigned</p>
+                  <p className="py-3 text-center text-xs text-zinc-500">No devices assigned</p>
                 )}
                 {syncDevices.map(d => {
                   const status = d.syncStatus ?? d.sync_status ?? 'unknown';
                   return (
-                    <div key={d.device_id} className="flex items-center gap-2 rounded px-2 py-1.5">
+                    <div key={d.device_id} className="flex items-center gap-2 rounded-lg px-2 py-1.5">
                       <StatusBadge status={status === 'synced' ? 'online' : status === 'failed' ? 'offline' : 'degraded'} />
-                      <span className="flex-1 text-xs text-zinc-400">{d.name ?? d.device_id.slice(0, 8)}</span>
-                      {(d.errorMessage ?? d.error_message) && <span className="max-w-[120px] truncate text-[10px] text-red-400">{d.errorMessage ?? d.error_message}</span>}
+                      <span className="flex-1 text-xs text-zinc-300">{d.name ?? d.device_id.slice(0, 8)}</span>
+                      {(d.errorMessage ?? d.error_message) && <span className="max-w-[120px] truncate text-[10px] text-rose-400">{d.errorMessage ?? d.error_message}</span>}
                     </div>
                   );
                 })}
@@ -200,7 +210,7 @@ export function UsersPage() {
               <button
                 onClick={() => resync.mutate(selected.id)}
                 disabled={resync.isPending}
-                className="flex items-center justify-center gap-2 rounded-lg border border-zinc-700 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#6366f1] py-2.5 text-sm font-semibold text-white shadow-glow transition hover:opacity-90 disabled:opacity-50"
               >
                 <RefreshCw className="h-4 w-4" />
                 {resync.isPending ? 'Queuing…' : 'Resync All Devices'}
@@ -208,7 +218,7 @@ export function UsersPage() {
               {selected.status !== 'terminated' && (
                 <button
                   onClick={() => setConfirmTerminate(true)}
-                  className="mt-2 flex items-center justify-center rounded-lg border border-red-900/50 py-2 text-sm font-medium text-red-400 hover:bg-red-950/30 transition-colors"
+                  className="mt-2 flex items-center justify-center rounded-xl border border-rose-500/20 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/10"
                 >
                   Terminate User
                 </button>
@@ -230,9 +240,24 @@ export function UsersPage() {
 
       {/* Add user modal */}
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-[420px] rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
-            <h3 className="mb-5 text-[15px] font-semibold text-zinc-50">Add User</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowAdd(false)}
+        >
+          <div
+            className="w-[420px] rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-[15px] font-bold text-zinc-50">Add User</h3>
+              <button
+                onClick={() => setShowAdd(false)}
+                className="rounded-lg p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
             <div className="flex flex-col gap-3">
               {([
                 { label: 'Employee No *', key: 'employeeNo', placeholder: 'EMP00123' },
@@ -246,17 +271,17 @@ export function UsersPage() {
                     value={form[key]}
                     onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
                     placeholder={placeholder}
-                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-purple-500 focus:outline-none"
+                    className={inputCls}
                   />
                 </div>
               ))}
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setShowAdd(false)} className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-400 hover:bg-zinc-900 transition-colors">Cancel</button>
+              <button onClick={() => setShowAdd(false)} className="rounded-xl border border-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-800/40 hover:text-zinc-50">Cancel</button>
               <button
                 onClick={() => addUser.mutate()}
                 disabled={addUser.isPending || !form.employeeNo}
-                className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                className="rounded-xl bg-gradient-to-r from-[#a855f7] to-[#6366f1] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
               >
                 {addUser.isPending ? 'Creating…' : 'Create User'}
               </button>

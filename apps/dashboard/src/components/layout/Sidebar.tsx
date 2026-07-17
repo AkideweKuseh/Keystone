@@ -1,10 +1,11 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Monitor, Users, Zap, RefreshCw, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { auth } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { disconnectSocket } from '@/lib/socket';
 import { useQuery } from '@tanstack/react-query';
+import { BrandTile } from '@/components/ui/BrandMark';
 
 const navItems = [
   { to: '/',        label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -16,8 +17,8 @@ const navItems = [
 
 export function Sidebar() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
-  // Fetch counts for badges
   const { data: devices } = useQuery({
     queryKey: ['devices-count'],
     queryFn: () => api.get<unknown[]>('/devices').then(r => r.data),
@@ -46,17 +47,23 @@ export function Sidebar() {
   }
 
   return (
-    <nav className="flex h-screen w-56 flex-shrink-0 flex-col border-r border-zinc-800 bg-zinc-950 px-3 py-4">
+    <nav className="flex h-screen w-60 flex-shrink-0 flex-col border-r border-zinc-800 bg-zinc-900 px-3 py-5">
       {/* Logo */}
-      <div className="mb-5 flex items-center gap-2.5 px-2">
-        <span className="text-xl leading-none">🔥</span>
-        <span className="text-[15px] font-bold tracking-tight text-zinc-50">Smart Access</span>
+      <div className="mb-6 flex items-center gap-2.5 px-2">
+        <BrandTile className="h-9 w-9 rounded-xl" />
+        <div className="leading-tight">
+          <span className="block text-[15px] font-bold tracking-tight text-zinc-50">Keystone</span>
+          <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+            Monitoring &amp; Sync
+          </span>
+        </div>
       </div>
 
       {/* Nav */}
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         {navItems.map(({ to, label, icon: Icon, exact, live }) => {
           const badge = badgeFor(to);
+          const isActive = exact ? pathname === to : pathname.startsWith(to);
           return (
             <NavLink
               key={to}
@@ -64,22 +71,27 @@ export function Sidebar() {
               end={exact}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium transition-colors',
+                  'group relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[14px] font-medium transition-all',
                   isActive
-                    ? 'bg-zinc-800 text-zinc-50 [&_svg]:text-purple-400'
-                    : 'text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300',
+                    ? 'bg-brand-violet text-white shadow-[0_8px_20px_-8px_rgba(168,85,247,0.6)] [&_svg]:text-white'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-50',
                 )
               }
             >
-              <Icon className="h-[15px] w-[15px] flex-shrink-0" />
+              <Icon className="h-[16px] w-[16px] flex-shrink-0" />
               <span>{label}</span>
               {badge && (
-                <span className="ml-auto rounded bg-zinc-700 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-300">
+                <span
+                  className={cn(
+                    'ml-auto rounded-md px-1.5 py-0.5 text-[10px] font-semibold',
+                    isActive ? 'bg-white/20 text-white' : 'bg-zinc-800 text-zinc-400',
+                  )}
+                >
                   {badge}
                 </span>
               )}
               {live && !badge && (
-                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7]" />
+                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-violet shadow-[0_0_8px_#a855f7]" />
               )}
             </NavLink>
           );
@@ -87,21 +99,21 @@ export function Sidebar() {
       </div>
 
       {/* Footer */}
-      <div className="mt-auto border-t border-zinc-800 pt-3">
-        <div className="flex items-center gap-2.5 px-2">
-          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-[11px] font-bold text-white">
+      <div className="mt-auto rounded-xl border border-zinc-800 bg-zinc-800/40 p-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#a855f7] to-[#6366f1] text-[12px] font-bold text-white">
             A
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-zinc-300">admin@localhost</p>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">owner</p>
+            <p className="truncate text-[12px] font-semibold text-zinc-200">admin@localhost</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">owner</p>
           </div>
           <button
             onClick={() => void handleLogout()}
-            className="rounded p-1 text-zinc-600 hover:text-zinc-400 transition-colors"
+            className="rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-rose-500"
             title="Log out"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className="h-4 w-4" />
           </button>
         </div>
       </div>
