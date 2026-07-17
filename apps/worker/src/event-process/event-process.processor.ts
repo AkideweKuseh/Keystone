@@ -4,6 +4,7 @@ import { PrismaService } from '@sam/persistence';
 import type { EventProcessJobData } from '@sam/queue';
 import { QUEUE_EVENT_PROCESS } from '@sam/queue';
 import { classifyEvent, parseEventPayload } from './event-parser';
+import { enqueueEventWebhooks } from '../webhook-dispatch/webhook-dispatch.processor';
 
 const redisUrl = process.env['REDIS_URL'] ?? 'redis://localhost:6379';
 const redisHost = redisUrl.replace('redis://', '').split(':')[0] ?? 'localhost';
@@ -75,6 +76,9 @@ export function createEventProcessWorker(prisma: PrismaService): Worker<EventPro
           tenantId,
         }),
       );
+
+      // Fan out to outbound webhooks (Keystone → gym), if configured.
+      await enqueueEventWebhooks(prisma, eventId, tenantId);
     },
     { connection: { host: redisHost, port: redisPort }, concurrency: 30 },
   );

@@ -2,18 +2,30 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { json } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 import { RealtimeGateway } from './realtime/realtime.gateway';
 
 async function bootstrap(): Promise<void> {
+  // bodyParser: false so we can register our own json parser that also
+  // captures the raw body (needed for Ed25519 request-signature verification).
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log'],
+    bodyParser: false,
   });
 
   // Security headers (HSTS, XSS, frame options, etc.)
   app.use(helmet());
+
+  app.use(
+    json({
+      verify: (req, _res, buf) => {
+        (req as { rawBody?: Buffer }).rawBody = buf;
+      },
+    }),
+  );
 
   app.setGlobalPrefix('api/v1', {
     exclude: ['health', 'health/ready', 'metrics'],

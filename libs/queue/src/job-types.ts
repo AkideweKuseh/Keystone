@@ -27,3 +27,7 @@ export interface EventPollJobData {
   tenantId: string;
   since: string; // ISO date string
 }
+
+export interface WebhookDispatchJobData {
+  deliveryId: string;
+}
