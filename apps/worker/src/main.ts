@@ -5,6 +5,7 @@ import { loadEnvFile } from './env';
 import { createCapabilityDiscoveryWorker } from './capability-discovery/capability-discovery.processor';
 import { createEventPollWorker } from './event-poll/event-poll.processor';
 import { createEventProcessWorker } from './event-process/event-process.processor';
+import { createGraceExpiryWorker } from './grace-expiry/grace-expiry.processor';
 import { createHealthCheckWorker } from './health-check/health-check.processor';
 import { createReconcilerWorker } from './reconciler/reconciler.processor';
 import { createUserSyncWorker } from './user-sync/user-sync.processor';
@@ -26,6 +27,7 @@ async function bootstrap(): Promise<void> {
     createEventProcessWorker(prisma),
     createEventPollWorker(prisma, crypto),
     createWebhookDispatchWorker(prisma),
+    createGraceExpiryWorker(prisma),
   ];
 
   process.stdout.write(`Workers started: ${workers.length} queues active\n`);

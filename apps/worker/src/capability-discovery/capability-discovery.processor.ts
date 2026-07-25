@@ -36,10 +36,12 @@ export function createCapabilityDiscoveryWorker(
         password: crypto.decrypt(Buffer.from(device.passwordEncrypted)),
       });
 
-      const [info, caps] = await Promise.all([
-        driver.getDeviceInfo(),
-        driver.discoverCapabilities(),
-      ]);
+      // Sequential, not Promise.all: each ISAPI call is Digest auth (a 401
+      // challenge + an authed retry), so parallel probes double the concurrent
+      // connections on a device with a small connection limit — which starves
+      // the health-check ping running at the same time and makes status flap.
+      const info = await driver.getDeviceInfo();
+      const caps = await driver.discoverCapabilities();
 
       await prisma.$transaction([
         prisma.device.update({
