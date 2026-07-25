@@ -12,12 +12,12 @@ The first request comes back `401 Unauthorized` with a `WWW-Authenticate: Digest
 
 If your HTTP client doesn't handle Digest automatically:
 
-| Language / client | What you need |
-|-------------------|---------------|
-| Node.js | `digest-fetch`, or hand-roll the Digest dance |
-| Python `requests` | `requests.auth.HTTPDigestAuth(user, pw)` |
-| Go `net/http` | A Digest auth round-tripper (no built-in) |
-| `curl` | `--digest -u user:pass` (NOT `-u user:pass` alone — that's Basic) |
+| Language / client | What you need                                                     |
+| ----------------- | ----------------------------------------------------------------- |
+| Node.js           | `digest-fetch`, or hand-roll the Digest dance                     |
+| Python `requests` | `requests.auth.HTTPDigestAuth(user, pw)`                          |
+| Go `net/http`     | A Digest auth round-tripper (no built-in)                         |
+| `curl`            | `--digest -u user:pass` (NOT `-u user:pass` alone — that's Basic) |
 
 **Symptom of getting this wrong:** every request returns 401 forever. You'll be sure your password is wrong. It isn't.
 
@@ -46,6 +46,7 @@ The device **keeps the connection open** and pushes `multipart/mixed` chunks as 
 ### 2b. HTTP listener (push, device-initiated)
 
 The device POSTs to your server. Configure via:
+
 - **Web UI:** Configuration → Network → Advanced Settings → HTTP Listening
 - **ISAPI:** `PUT /ISAPI/Event/notification/httpHosts` (see doc 12)
 
@@ -101,14 +102,14 @@ rtsp://<user>:<pass>@<ip>:554/Streaming/Channels/<channel-id>
 
 Channel-ID encoding:
 
-| Value | Meaning |
-|-------|---------|
-| `101` | Channel 1, main stream |
-| `102` | Channel 1, sub-stream |
+| Value | Meaning                                |
+| ----- | -------------------------------------- |
+| `101` | Channel 1, main stream                 |
+| `102` | Channel 1, sub-stream                  |
 | `103` | Channel 1, third stream (if supported) |
-| `201` | Channel 2, main stream |
-| `202` | Channel 2, sub-stream |
-| ... | pattern continues |
+| `201` | Channel 2, main stream                 |
+| `202` | Channel 2, sub-stream                  |
+| ...   | pattern continues                      |
 
 ⚠️ **URL-encode the password** if it contains special characters. A single `@` in a password will silently break the URL parser — the host portion will be wrong and you'll get cryptic connection failures. Same for `:`, `/`, `?`, `#`, `%`, etc. Use `encodeURIComponent` in JS, `urllib.parse.quote` in Python.
 
@@ -151,6 +152,16 @@ Same model number, two firmware versions → two different sets of quirks. We ha
 
 ⚠️ When we update firmware on a fleet, **rerun capability discovery** for every affected device. There's a `device:rediscover` job for this.
 
+### Field observation — DS-K1T342MFX-E1 (firmware V4.39.180) is XML-only
+
+Observed on a bench pair (2026-07). This face/card terminal **ignores `?format=json` entirely** and answers **`200 OK` with an XML body** on every ISAPI endpoint, including `/ISAPI/System/deviceInfo`. It does not error — it just hands back XML with a `200`.
+
+This broke the driver originally: `HikvisionHttp` did a bare `JSON.parse()` on the body, which threw on the XML, got wrapped as a generic `DRIVER_INTERNAL`, and the health check's `catch` silently marked the device `offline` despite auth succeeding. The symptom was maddening: correct credentials, reachable device, "Test connection" green from a browser, but permanently `offline` in the platform.
+
+**Fix (shipped):** `HikvisionHttp.parseBody()` now parses **JSON-first, XML-fallback keyed on parse-failure**, not on status code — because this firmware returns `200`, a status-code-gated fallback (§ "How we cope" above) would never have fired. `fast-xml-parser` (XXE-safe defaults) turns `<DeviceInfo>…</DeviceInfo>` into `{ DeviceInfo: {…} }`, matching the shape the driver already expected from the JSON path, so no per-method changes were needed. Empty `200` bodies (common on unlock `PUT`) parse to `{}`. See `libs/drivers/hikvision/src/hikvision-http.spec.ts`.
+
+**Takeaway:** never assume `?format=json` is honored. The response parser must sniff the actual body, and the fallback trigger must be "JSON didn't parse," not a specific HTTP status.
+
 ---
 
 ## 7. Character encoding gotcha
@@ -191,17 +202,17 @@ When something doesn't work with a Hikvision device, walk this list before openi
 
 Cross-listed with doc 05 §3.3, with the gotchas annotated:
 
-| Operation | Endpoint | Gotcha |
-|-----------|----------|--------|
-| Identity | `GET /ISAPI/System/deviceInfo` | First call we make; if Digest is broken, this fails first |
-| HTTP host config | `GET / PUT /ISAPI/Event/notification/httpHosts` | Sometimes the device has multiple slots; we always write to id=1 unless that's taken |
-| Test push | `POST /ISAPI/Event/notification/httpHosts/1/test` | Returns `ok` even if event linkage is broken — only proves network path |
-| Alert stream | `GET /ISAPI/Event/notification/alertStream` | Hold the connection open. We only use this for diagnostic tools, not the main path |
-| User upsert | `POST /ISAPI/AccessControl/UserInfo/Record` | JSON works on newer firmware (`?format=json`); XML always works |
-| Card upsert | `POST /ISAPI/AccessControl/CardInfo/Record` | Some firmwares reject if user doesn't exist yet — upsert user first |
-| Face upload | `POST /ISAPI/Intelligent/FDLib/FaceDataRecord` | Multipart; some firmwares cap at 200 KB per image |
-| Door unlock | `PUT /ISAPI/AccessControl/RemoteControl/door/{n}` | XML body. JSON variant exists on some firmwares but is inconsistent |
-| Event query (pull) | `POST /ISAPI/AccessControl/AcsEvent` | Time-bounded. Use small windows; large ranges error out or truncate silently |
+| Operation          | Endpoint                                          | Gotcha                                                                               |
+| ------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Identity           | `GET /ISAPI/System/deviceInfo`                    | First call we make; if Digest is broken, this fails first                            |
+| HTTP host config   | `GET / PUT /ISAPI/Event/notification/httpHosts`   | Sometimes the device has multiple slots; we always write to id=1 unless that's taken |
+| Test push          | `POST /ISAPI/Event/notification/httpHosts/1/test` | Returns `ok` even if event linkage is broken — only proves network path              |
+| Alert stream       | `GET /ISAPI/Event/notification/alertStream`       | Hold the connection open. We only use this for diagnostic tools, not the main path   |
+| User upsert        | `POST /ISAPI/AccessControl/UserInfo/Record`       | JSON works on newer firmware (`?format=json`); XML always works                      |
+| Card upsert        | `POST /ISAPI/AccessControl/CardInfo/Record`       | Some firmwares reject if user doesn't exist yet — upsert user first                  |
+| Face upload        | `POST /ISAPI/Intelligent/FDLib/FaceDataRecord`    | Multipart; some firmwares cap at 200 KB per image                                    |
+| Door unlock        | `PUT /ISAPI/AccessControl/RemoteControl/door/{n}` | XML body. JSON variant exists on some firmwares but is inconsistent                  |
+| Event query (pull) | `POST /ISAPI/AccessControl/AcsEvent`              | Time-bounded. Use small windows; large ranges error out or truncate silently         |
 
 ---
 

@@ -409,6 +409,9 @@ importers:
       digest-fetch:
         specifier: ^3.1.1
         version: 3.1.1
+      fast-xml-parser:
+        specifier: ^5.8.0
+        version: 5.8.0
     devDependencies:
       '@types/node':
         specifier: ^20.0.0

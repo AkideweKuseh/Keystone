@@ -82,4 +82,11 @@ export class DevicesController {
   ) {
     return this.devices.unlockDoor(req.user.tenantId, id, body.door_index ?? 1);
   }
+
+  @Post(':id/health-check')
+  @Roles('operator')
+  @ApiOperation({ summary: 'Queue an immediate health check for the device' })
+  healthCheck(@Request() req: { user: JwtPayload }, @Param('id', ParseUUIDPipe) id: string) {
+    return this.devices.enqueueHealthCheck(req.user.tenantId, id);
+  }
 }

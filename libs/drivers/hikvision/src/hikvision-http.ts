@@ -1,9 +1,36 @@
 import DigestFetch from 'digest-fetch';
+import { XMLParser } from 'fast-xml-parser';
 import { DriverError } from '@sam/drivers-core';
 import type { DriverTarget } from '@sam/drivers-core';
 
 interface NodeError extends Error {
   code?: string;
+}
+
+/**
+ * XXE-hardened parser (no DTD / external-entity loading — fast-xml-parser's
+ * safe default). Many Hikvision firmwares (e.g. DS-K1T342 series) ignore the
+ * `?format=json` hint and always answer XML, so every response is parsed
+ * JSON-first with an XML fallback. `<DeviceInfo>…</DeviceInfo>` parses to
+ * `{ DeviceInfo: {…} }`, matching the shape the driver already expects from
+ * the JSON path. See doc 13 §"JSON path first then XML fallback".
+ */
+const xmlParser = new XMLParser({
+  ignoreAttributes: false,
+  parseAttributeValue: true,
+  allowBooleanAttributes: true,
+  ignoreDeclaration: true,
+});
+
+/** Parse a device response body as JSON, falling back to XML, then empty. */
+function parseBody<T>(text: string): T {
+  const trimmed = text.trim();
+  if (trimmed === '') return {} as T;
+  try {
+    return JSON.parse(trimmed) as T;
+  } catch {
+    return xmlParser.parse(trimmed) as T;
+  }
 }
 
 export class HikvisionHttp {
@@ -61,7 +88,7 @@ export class HikvisionHttp {
       if (res.status === 429) throw DriverError.rateLimited();
       if (res.status >= 500) throw DriverError.badResponse(`HTTP ${res.status}`);
       const text = await res.text();
-      return JSON.parse(text) as T;
+      return parseBody<T>(text);
     } catch (err) {
       if (err instanceof DriverError) throw err;
       const e = err as NodeError;
