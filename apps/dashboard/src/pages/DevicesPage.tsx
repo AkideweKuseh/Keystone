@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Unlock, Plus, RefreshCw, Search, X } from 'lucide-react';
+import { Unlock, Plus, RefreshCw, Search, X, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Topbar } from '@/components/layout/Topbar';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -168,9 +168,17 @@ export function DevicesPage() {
                         <button
                           onClick={() => unlock.mutate(d.id)}
                           disabled={unlock.isPending}
-                          className="flex items-center gap-1 rounded-lg border border-zinc-800 px-2 py-1 text-xs font-medium text-zinc-400 transition-colors hover:border-brand-violet hover:text-brand-violet"
+                          className="flex items-center gap-1 rounded-lg border border-zinc-800 px-2 py-1 text-xs font-medium text-zinc-400 transition-colors hover:border-brand-violet hover:text-brand-violet disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <Unlock className="h-3 w-3" /> Unlock
+                          {unlock.isPending && unlock.variables === d.id ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" /> Unlocking…
+                            </>
+                          ) : (
+                            <>
+                              <Unlock className="h-3 w-3" /> Unlock
+                            </>
+                          )}
                         </button>
                       )}
                     </td>
@@ -227,19 +235,43 @@ export function DevicesPage() {
                 onClick={() => unlock.mutate(selected.id)}
                 className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#6366f1] py-2.5 text-sm font-semibold text-white shadow-glow transition disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <Unlock className="h-4 w-4" /> Unlock Door
+                {unlock.isPending && unlock.variables === selected.id ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Unlocking…
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="h-4 w-4" /> Unlock Door
+                  </>
+                )}
               </button>
               <button
                 onClick={() => healthCheck.mutate(selected.id)}
-                className="flex items-center justify-center gap-2 rounded-xl border border-zinc-800 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800/40"
+                disabled={healthCheck.isPending}
+                className="flex items-center justify-center gap-2 rounded-xl border border-zinc-800 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800/40 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <RefreshCw className="h-4 w-4" /> Force Health Check
+                {healthCheck.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Checking…
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" /> Force Health Check
+                  </>
+                )}
               </button>
               <button
                 onClick={() => setConfirmDisable(true)}
-                className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-rose-500/20 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/10"
+                disabled={disable.isPending}
+                className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-rose-500/20 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Disable Device
+                {disable.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Disabling…
+                  </>
+                ) : (
+                  'Disable Device'
+                )}
               </button>
             </div>
           </div>

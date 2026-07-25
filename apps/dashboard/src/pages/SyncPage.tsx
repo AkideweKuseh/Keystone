@@ -115,8 +115,10 @@ export function SyncPage() {
             {failureList.length > 0 && (
               <button
                 onClick={() => failureList.forEach(f => resyncRow.mutate(f.userId))}
-                className="rounded-xl border border-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-800/40 hover:text-zinc-50"
+                disabled={resyncRow.isPending}
+                className="flex items-center gap-1.5 rounded-xl border border-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-800/40 hover:text-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
+                {resyncRow.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Resync All Failed
               </button>
             )}
@@ -154,8 +156,12 @@ export function SyncPage() {
                     <td className="px-5 py-3.5">
                       <button
                         onClick={() => resyncRow.mutate(f.userId)}
-                        className="rounded-lg border border-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-300 transition hover:border-brand-violet hover:text-brand-violet"
+                        disabled={resyncRow.isPending}
+                        className="flex items-center gap-1 rounded-lg border border-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-300 transition hover:border-brand-violet hover:text-brand-violet disabled:cursor-not-allowed disabled:opacity-50"
                       >
+                        {resyncRow.isPending && resyncRow.variables === f.userId && (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        )}
                         Resync
                       </button>
                     </td>

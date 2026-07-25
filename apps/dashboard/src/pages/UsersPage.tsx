@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, RefreshCw, Search, X } from 'lucide-react';
+import { Plus, RefreshCw, Search, X, Loader2 } from 'lucide-react';
 import { Topbar } from '@/components/layout/Topbar';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { SyncBar } from '@/components/ui/SyncBar';
@@ -210,17 +210,31 @@ export function UsersPage() {
               <button
                 onClick={() => resync.mutate(selected.id)}
                 disabled={resync.isPending}
-                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#6366f1] py-2.5 text-sm font-semibold text-white shadow-glow transition hover:opacity-90 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#6366f1] py-2.5 text-sm font-semibold text-white shadow-glow transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <RefreshCw className="h-4 w-4" />
-                {resync.isPending ? 'Queuing…' : 'Resync All Devices'}
+                {resync.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Queuing…
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" /> Resync All Devices
+                  </>
+                )}
               </button>
               {selected.status !== 'terminated' && (
                 <button
                   onClick={() => setConfirmTerminate(true)}
-                  className="mt-2 flex items-center justify-center rounded-xl border border-rose-500/20 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/10"
+                  disabled={terminate.isPending}
+                  className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-rose-500/20 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Terminate User
+                  {terminate.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Terminating…
+                    </>
+                  ) : (
+                    'Terminate User'
+                  )}
                 </button>
               )}
             </div>
