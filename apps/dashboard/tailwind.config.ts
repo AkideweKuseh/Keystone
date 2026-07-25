@@ -32,11 +32,21 @@ export default {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        brand: {
+          violet: 'hsl(var(--brand-violet))',
+          indigo: 'hsl(var(--brand-indigo))',
+          fuchsia: 'hsl(var(--brand-fuchsia))',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        md: 'calc(var(--radius) - 4px)',
+        sm: 'calc(var(--radius) - 8px)',
+      },
+      boxShadow: {
+        card: '0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px 0 rgb(0 0 0 / 0.3)',
+        'card-hover':
+          '0 0 0 1px hsl(var(--brand-violet) / 0.35), 0 12px 40px -12px hsl(var(--brand-violet) / 0.4)',
       },
       keyframes: {
         pulse: {
@@ -51,11 +61,16 @@ export default {
           from: { opacity: '0', transform: 'translateY(-4px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        'fade-up': {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         pulse: 'pulse 2s ease-in-out infinite',
         'slide-in': 'slide-in 0.2s ease-out',
         'fade-in': 'fade-in 0.15s ease-out',
+        'fade-up': 'fade-up 0.4s ease-out both',
       },
     },
   },

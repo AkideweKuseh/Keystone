@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Unlock, Plus, RefreshCw, Search } from 'lucide-react';
+import { Unlock, Plus, RefreshCw, Search, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Topbar } from '@/components/layout/Topbar';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -32,20 +32,22 @@ interface Device {
 
 function InfoRow({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
-    <div className="flex justify-between py-2 border-b border-zinc-800 last:border-0">
-      <span className="text-xs text-zinc-500">{label}</span>
-      <span className="text-xs text-zinc-200 font-mono">{value ?? '—'}</span>
+    <div className="flex justify-between border-b border-zinc-800 py-2 last:border-0">
+      <span className="text-xs text-zinc-400">{label}</span>
+      <span className="font-mono text-xs text-zinc-200">{value ?? '—'}</span>
     </div>
   );
 }
 
 function Chip({ label, active }: { label: string; active: boolean }) {
   return (
-    <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${active ? 'bg-green-500/10 text-green-400' : 'bg-zinc-800 text-zinc-600'}`}>
+    <span className={`rounded-md px-2 py-0.5 text-[10px] font-semibold ${active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-500'}`}>
       {label}
     </span>
   );
 }
+
+const inputCls = 'w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-50 placeholder:text-zinc-500 transition focus:border-brand-violet focus:outline-none focus:ring-4 focus:ring-brand-violet/15';
 
 export function DevicesPage() {
   const qc = useQueryClient();
@@ -54,7 +56,6 @@ export function DevicesPage() {
   const [showRegister, setShowRegister] = useState(false);
   const [confirmDisable, setConfirmDisable] = useState(false);
 
-  // Register form state
   const [form, setForm] = useState({ name: '', vendor: 'mock', ipAddress: '127.0.0.1', port: '80', username: 'admin', password: '' });
 
   const { data: devices = [], isLoading } = useQuery<Device[]>({
@@ -99,6 +100,14 @@ export function DevicesPage() {
     [d.name, d.ipAddress, d.vendor, d.model].some(v => v?.toLowerCase().includes(search.toLowerCase()))
   );
 
+  // Close the register modal on Escape
+  useEffect(() => {
+    if (!showRegister) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowRegister(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showRegister]);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <Topbar
@@ -106,17 +115,17 @@ export function DevicesPage() {
         actions={
           <>
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search…"
-                className="rounded-lg border border-zinc-700 bg-zinc-800/60 py-1.5 pl-8 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-purple-500 focus:outline-none w-48"
+                className="w-48 rounded-xl border border-zinc-800 bg-zinc-900 py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder:text-zinc-500 transition focus:border-brand-violet focus:outline-none focus:ring-4 focus:ring-brand-violet/15"
               />
             </div>
             <button
               onClick={() => setShowRegister(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700 transition-colors"
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#6366f1] px-3.5 py-2 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(168,85,247,0.7)]"
             >
               <Plus className="h-3.5 w-3.5" /> Register Device
             </button>
@@ -124,16 +133,16 @@ export function DevicesPage() {
         }
       />
 
-      <div className="flex-1 overflow-auto p-6">
-        <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+      <div className="flex-1 overflow-auto bg-ambient p-6">
+        <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-card">
           {isLoading ? (
-            <div className="flex items-center justify-center py-20 text-sm text-zinc-600">Loading…</div>
+            <div className="flex items-center justify-center py-20 text-sm text-zinc-500">Loading…</div>
           ) : (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-zinc-800">
                   {['Name', 'Status', 'Vendor', 'Model', 'IP Address', 'Last Seen', ''].map(h => (
-                    <th key={h} className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+                    <th key={h} className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
                       {h}
                     </th>
                   ))}
@@ -144,22 +153,22 @@ export function DevicesPage() {
                   <tr
                     key={d.id}
                     onClick={() => setSelected(d)}
-                    className="cursor-pointer border-b border-zinc-800/50 hover:bg-zinc-800/40 transition-colors last:border-0"
+                    className="cursor-pointer border-b border-zinc-800/50 transition-colors last:border-0 hover:bg-zinc-800/40"
                   >
-                    <td className="px-5 py-3 text-[13px] font-semibold text-zinc-100">{d.name}</td>
-                    <td className="px-5 py-3"><StatusBadge status={d.status} /></td>
-                    <td className="px-5 py-3 text-[13px] capitalize text-zinc-400">{d.vendor}</td>
-                    <td className="px-5 py-3 text-[13px] text-zinc-500">{d.model ?? '—'}</td>
-                    <td className="px-5 py-3 font-mono text-[12px] text-zinc-500">{d.ipAddress}:{d.port}</td>
-                    <td className="px-5 py-3 text-[13px] text-zinc-500">
+                    <td className="px-5 py-3.5 text-[13px] font-semibold text-zinc-50">{d.name}</td>
+                    <td className="px-5 py-3.5"><StatusBadge status={d.status} /></td>
+                    <td className="px-5 py-3.5 text-[13px] capitalize text-zinc-400">{d.vendor}</td>
+                    <td className="px-5 py-3.5 text-[13px] text-zinc-400">{d.model ?? '—'}</td>
+                    <td className="px-5 py-3.5 font-mono text-[12px] text-zinc-400">{d.ipAddress}:{d.port}</td>
+                    <td className="px-5 py-3.5 text-[13px] text-zinc-400">
                       {d.lastSeenAt ? formatDistanceToNow(new Date(d.lastSeenAt), { addSuffix: true }) : 'Never'}
                     </td>
-                    <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                    <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
                       {d.status === 'online' && (
                         <button
                           onClick={() => unlock.mutate(d.id)}
                           disabled={unlock.isPending}
-                          className="flex items-center gap-1 rounded border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 transition-colors"
+                          className="flex items-center gap-1 rounded-lg border border-zinc-800 px-2 py-1 text-xs font-medium text-zinc-400 transition-colors hover:border-brand-violet hover:text-brand-violet"
                         >
                           <Unlock className="h-3 w-3" /> Unlock
                         </button>
@@ -169,7 +178,7 @@ export function DevicesPage() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-12 text-center text-sm text-zinc-600">
+                    <td colSpan={7} className="px-5 py-12 text-center text-sm text-zinc-500">
                       {search ? 'No devices match your search.' : 'No devices registered yet.'}
                     </td>
                   </tr>
@@ -187,8 +196,8 @@ export function DevicesPage() {
             <div><StatusBadge status={selected.status} /></div>
 
             <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">Device Info</p>
-              <div className="rounded-lg border border-zinc-800 px-3">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Device Info</p>
+              <div className="rounded-xl border border-zinc-800 px-3">
                 <InfoRow label="IP Address" value={`${selected.ipAddress}:${selected.port}`} />
                 <InfoRow label="Vendor" value={selected.vendor} />
                 <InfoRow label="Model" value={selected.model} />
@@ -199,13 +208,13 @@ export function DevicesPage() {
 
             {selected.capabilities && (
               <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">Capabilities</p>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Capabilities</p>
                 <div className="flex flex-wrap gap-2">
                   <Chip label="JSON API" active={selected.capabilities.supportsJson} />
                   <Chip label="Face" active={selected.capabilities.supportsFace} />
                   <Chip label="Fingerprint" active={selected.capabilities.supportsFp} />
                 </div>
-                <div className="mt-2 flex gap-4 text-xs text-zinc-500">
+                <div className="mt-2 flex gap-4 text-xs text-zinc-400">
                   {selected.capabilities.maxUsers != null && <span>Max users: {selected.capabilities.maxUsers.toLocaleString()}</span>}
                   {selected.capabilities.maxCards != null && <span>Max cards: {selected.capabilities.maxCards.toLocaleString()}</span>}
                 </div>
@@ -216,19 +225,19 @@ export function DevicesPage() {
               <button
                 disabled={selected.status !== 'online' || unlock.isPending}
                 onClick={() => unlock.mutate(selected.id)}
-                className="flex items-center justify-center gap-2 rounded-lg border border-zinc-700 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#6366f1] py-2.5 text-sm font-semibold text-white shadow-glow transition disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Unlock className="h-4 w-4" /> Unlock Door
               </button>
               <button
                 onClick={() => healthCheck.mutate(selected.id)}
-                className="flex items-center justify-center gap-2 rounded-lg border border-zinc-700 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
+                className="flex items-center justify-center gap-2 rounded-xl border border-zinc-800 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800/40"
               >
                 <RefreshCw className="h-4 w-4" /> Force Health Check
               </button>
               <button
                 onClick={() => setConfirmDisable(true)}
-                className="flex items-center justify-center gap-2 rounded-lg border border-red-900/50 py-2 text-sm font-medium text-red-400 hover:bg-red-950/30 transition-colors mt-2"
+                className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-rose-500/20 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/10"
               >
                 Disable Device
               </button>
@@ -237,7 +246,6 @@ export function DevicesPage() {
         )}
       </Drawer>
 
-      {/* Disable confirm */}
       <ConfirmDialog
         open={confirmDisable}
         title="Disable this device?"
@@ -250,9 +258,24 @@ export function DevicesPage() {
 
       {/* Register modal */}
       {showRegister && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-[460px] rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
-            <h3 className="mb-5 text-[15px] font-semibold text-zinc-50">Register Device</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowRegister(false)}
+        >
+          <div
+            className="w-[460px] rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-[15px] font-bold text-zinc-50">Register Device</h3>
+              <button
+                onClick={() => setShowRegister(false)}
+                className="rounded-lg p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
             <div className="flex flex-col gap-3">
               {([
                 { label: 'Name', key: 'name', placeholder: 'HQ Lobby Reader', type: 'text' },
@@ -268,7 +291,7 @@ export function DevicesPage() {
                     value={form[key]}
                     onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
                     placeholder={placeholder}
-                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-purple-500 focus:outline-none"
+                    className={inputCls}
                   />
                 </div>
               ))}
@@ -277,7 +300,7 @@ export function DevicesPage() {
                 <select
                   value={form.vendor}
                   onChange={e => setForm(p => ({ ...p, vendor: e.target.value }))}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-purple-500 focus:outline-none"
+                  className={inputCls}
                 >
                   <option value="mock">Mock (local dev)</option>
                   <option value="hikvision">Hikvision</option>
@@ -285,13 +308,13 @@ export function DevicesPage() {
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setShowRegister(false)} className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-400 hover:bg-zinc-900 transition-colors">
+              <button onClick={() => setShowRegister(false)} className="rounded-xl border border-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-800/40 hover:text-zinc-50">
                 Cancel
               </button>
               <button
                 onClick={() => register.mutate()}
                 disabled={register.isPending || !form.name || !form.password}
-                className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                className="rounded-xl bg-gradient-to-r from-[#a855f7] to-[#6366f1] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
               >
                 {register.isPending ? 'Registering…' : 'Register'}
               </button>

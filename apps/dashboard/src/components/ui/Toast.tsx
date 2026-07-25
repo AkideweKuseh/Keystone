@@ -35,10 +35,10 @@ export function ToastContainer() {
         <div
           key={t.id}
           className={cn(
-            'flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium shadow-lg animate-fade-in',
+            'flex items-center gap-3 rounded-xl border bg-zinc-900 px-4 py-3 text-sm font-medium shadow-lg animate-fade-in',
             t.type === 'success'
-              ? 'border-green-800 bg-green-950 text-green-300'
-              : 'border-red-800 bg-red-950 text-red-300',
+              ? 'border-emerald-500/20 text-emerald-400'
+              : 'border-rose-500/20 text-rose-400',
           )}
         >
           {t.type === 'success'

@@ -55,7 +55,7 @@ export class UsersService {
         await this.syncQueue.add(
           'user-sync',
           { deviceId, userId: user.id, tenantId, desiredState: 'present', revision: user.revision },
-          { jobId: `user-sync:${user.id}:${deviceId}:${user.revision}` },
+          { jobId: `user-sync.${user.id}.${deviceId}.${user.revision}` },
         );
       }),
     );
@@ -95,7 +95,7 @@ export class UsersService {
         await this.syncQueue.add(
           'user-sync',
           { deviceId, userId: id, tenantId, desiredState: 'present', revision: newRevision },
-          { jobId: `user-sync:${id}:${deviceId}:${newRevision}` },
+          { jobId: `user-sync.${id}.${deviceId}.${newRevision}` },
         );
       }),
     );
@@ -117,7 +117,7 @@ export class UsersService {
         await this.syncQueue.add(
           'user-sync',
           { deviceId, userId: id, tenantId, desiredState: 'absent', revision: newRevision },
-          { jobId: `user-sync:${id}:${deviceId}:${newRevision}` },
+          { jobId: `user-sync.${id}.${deviceId}.${newRevision}` },
         );
       }),
     );

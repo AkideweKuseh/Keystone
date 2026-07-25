@@ -1,6 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { DeviceVendor } from '@sam/domain';
+
+const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 
 export class CreateDeviceDto {
   @ApiProperty({ example: 'HQ Lobby Reader' })
@@ -17,6 +20,7 @@ export class CreateDeviceDto {
   model?: string;
 
   @ApiProperty({ example: '10.10.0.21' })
+  @Transform(trim)
   @IsString()
   ipAddress!: string;
 
@@ -27,6 +31,7 @@ export class CreateDeviceDto {
   port: number = 80;
 
   @ApiProperty({ example: 'admin' })
+  @Transform(trim)
   @IsString()
   username!: string;
 

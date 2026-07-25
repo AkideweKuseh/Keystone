@@ -110,6 +110,13 @@ export class DevicesService {
     await this.repo.update(id, { status: 'disabled' });
   }
 
+  async enqueueHealthCheck(tenantId: string, id: string): Promise<{ status: string }> {
+    const device = await this.repo.findById(id);
+    if (!device || device.tenantId !== tenantId) throw new NotFoundError('Device', id);
+    await this.healthQueue.add('health-check', { deviceId: id, tenantId });
+    return { status: 'queued' };
+  }
+
   async unlockDoor(
     tenantId: string,
     deviceId: string,

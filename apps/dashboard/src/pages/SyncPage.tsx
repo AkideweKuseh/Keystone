@@ -30,21 +30,21 @@ interface FailureRow {
 
 function QueueCard({ q }: { q: QueueInfo }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-      <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-zinc-600">{q.name}</p>
-      <div className="flex gap-4">
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-card">
+      <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">{q.name}</p>
+      <div className="flex gap-6">
         <div>
-          <p className="text-2xl font-bold text-zinc-50">{q.waiting}</p>
-          <p className="text-[10px] text-zinc-600">waiting</p>
+          <p className="text-2xl font-bold tabular text-zinc-50">{q.waiting}</p>
+          <p className="text-[10px] text-zinc-500">waiting</p>
         </div>
         <div>
-          <p className="text-2xl font-bold text-zinc-50">{q.active}</p>
-          <p className="text-[10px] text-zinc-600">active</p>
+          <p className="text-2xl font-bold tabular text-zinc-50">{q.active}</p>
+          <p className="text-[10px] text-zinc-500">active</p>
         </div>
         {q.failed > 0 && (
           <div>
-            <p className="text-2xl font-bold text-red-400">{q.failed}</p>
-            <p className="text-[10px] text-zinc-600">failed</p>
+            <p className="text-2xl font-bold tabular text-rose-400">{q.failed}</p>
+            <p className="text-[10px] text-zinc-500">failed</p>
           </div>
         )}
       </div>
@@ -89,7 +89,7 @@ export function SyncPage() {
           <button
             onClick={() => reconcile.mutate()}
             disabled={reconcile.isPending}
-            className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-60 transition-colors"
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#6366f1] px-3.5 py-2 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(168,85,247,0.7)] transition disabled:opacity-60"
           >
             {reconcile.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Reconcile All
@@ -97,25 +97,25 @@ export function SyncPage() {
         }
       />
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto bg-ambient p-6">
         {/* Queue cards */}
         {syncData?.queues && syncData.queues.length > 0 && (
-          <div className="mb-6 grid grid-cols-3 gap-3">
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {syncData.queues.map(q => <QueueCard key={q.name} q={q} />)}
           </div>
         )}
 
         {/* Failures table */}
-        <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
-          <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-3.5">
+        <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-card">
+          <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
             <div>
-              <h3 className="text-[13px] font-semibold text-zinc-50">Sync Failures</h3>
-              <p className="text-[11px] text-zinc-600">{failureList.length} items need attention</p>
+              <h3 className="text-[15px] font-bold text-zinc-50">Sync Failures</h3>
+              <p className="text-[12px] text-zinc-500">{failureList.length} items need attention</p>
             </div>
             {failureList.length > 0 && (
               <button
                 onClick={() => failureList.forEach(f => resyncRow.mutate(f.userId))}
-                className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-800 transition-colors"
+                className="rounded-xl border border-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-800/40 hover:text-zinc-50"
               >
                 Resync All Failed
               </button>
@@ -123,37 +123,38 @@ export function SyncPage() {
           </div>
 
           {failureList.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-sm text-green-400">
-              ✓ No sync failures — all devices in sync
+            <div className="flex items-center justify-center gap-2 py-16 text-sm font-medium text-emerald-400">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-xs">✓</span>
+              No sync failures — all devices in sync
             </div>
           ) : (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-zinc-800">
                   {['User', 'Device', 'Error', 'Retries', 'Last Attempt', ''].map(h => (
-                    <th key={h} className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-600">{h}</th>
+                    <th key={h} className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-500">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {failureList.map((f, i) => (
                   <tr key={i} className="border-b border-zinc-800/50 last:border-0">
-                    <td className="px-5 py-3 text-[13px] text-zinc-200">
+                    <td className="px-5 py-3.5 text-[13px] font-semibold text-zinc-100">
                       {[f.user?.firstName, f.user?.lastName].filter(Boolean).join(' ') || f.user?.employeeNo || f.userId.slice(0, 8)}
                     </td>
-                    <td className="px-5 py-3 text-[13px] text-zinc-400">{f.device?.name ?? f.deviceId.slice(0, 8)}</td>
-                    <td className="px-5 py-3 max-w-[200px]">
+                    <td className="px-5 py-3.5 text-[13px] text-zinc-400">{f.device?.name ?? f.deviceId.slice(0, 8)}</td>
+                    <td className="px-5 py-3.5 max-w-[220px]">
                       <StatusBadge status="offline" />
-                      {f.errorMessage && <p className="mt-1 truncate text-[11px] text-red-400">{f.errorMessage}</p>}
+                      {f.errorMessage && <p className="mt-1 truncate text-[11px] text-rose-400">{f.errorMessage}</p>}
                     </td>
-                    <td className="px-5 py-3 text-[13px] text-zinc-500">{f.retryCount}</td>
-                    <td className="px-5 py-3 text-[13px] text-zinc-500">
+                    <td className="px-5 py-3.5 text-[13px] text-zinc-400 tabular">{f.retryCount}</td>
+                    <td className="px-5 py-3.5 text-[13px] text-zinc-400">
                       {f.lastAttemptAt ? formatDistanceToNow(new Date(f.lastAttemptAt), { addSuffix: true }) : '—'}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3.5">
                       <button
                         onClick={() => resyncRow.mutate(f.userId)}
-                        className="rounded border border-zinc-700 px-2.5 py-1 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 transition-colors"
+                        className="rounded-lg border border-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-300 transition hover:border-brand-violet hover:text-brand-violet"
                       >
                         Resync
                       </button>
