@@ -24,7 +24,8 @@ The deployment reality is different:
 ## Decision
 
 **Keystone runs as a per-branch, read-and-enforce agent. It does not provision
-credentials. All integration is outbound; the gym database is accessed directly.**
+credentials. All integration is outbound, over BoldGym's HTTP access API (not
+its database directly — updated 2026-07-26).**
 
 Four settled points (from the deployment owner):
 
@@ -33,9 +34,11 @@ Four settled points (from the deployment owner):
    linking").
 2. **Revocation:** expired members are **disabled, not deleted**, on the device —
    preserving the enrolled face so a renewal needs no re-enrollment.
-3. **Gym DB access:** Keystone reads membership from, and writes attendance to,
-   the gym database directly. Attendance is written to a **dedicated integration
-   table**, never into the platform's core tables.
+3. **Gym access:** Keystone reads membership and reports attendance over
+   BoldGym's **HTTP access API** (`GET /api/access/members`,
+   `POST /api/access/attendance`), authenticated with a shared key. BoldGym owns
+   its schema and resolves device users to members server-side. (Originally
+   planned as direct DB access; changed to an API to decouple from the schema.)
 4. **Attendance:** Keystone writes **raw entry/exit event rows**. Analytics
    (sessions, dwell time, occupancy) is done downstream in the gym platform, not
    in Keystone.
@@ -51,14 +54,14 @@ reads the enrolled set, it never writes faces. This ADR records that carve-out.
 
 ```
   Hikvision terminals ──(LAN push: entry/exit)──►  Keystone receiver
-  Keystone  ──(write raw attendance rows)──────►  Gym DB (integration table)
-  Keystone  ──(poll membership status)◄─────────  Gym DB (read)
+  Keystone  ──(POST /api/access/attendance)────►  BoldGym access API
+  Keystone  ──(GET  /api/access/members)◄───────  BoldGym access API
   Keystone  ──(LAN: disable expired, unlock)───►  Hikvision terminals
 ```
 
-No inbound port is exposed; the branch PC needs only outbound network to the gym
-DB and LAN reach to the terminals. This is why Docker + launcher on a local box
-(ADR: Option A) is sufficient — no VPN, no public API.
+No inbound port is exposed; the branch PC needs only outbound HTTPS to the
+BoldGym API and LAN reach to the terminals. This is why Docker + launcher on a
+local box (ADR: Option A) is sufficient — no VPN, no public API on Keystone.
 
 ## Member↔device linking
 
@@ -115,17 +118,17 @@ work offline and survive a WAN outage.
 
 ## BoldGym specifics (confirmed from the codebase)
 
-BoldGym is **Node/Express on MongoDB** (`MONGODB_URI`), single location (gym +
-beach _gates_, not multi-branch — branches are a future feature). Keystone
-touches two collections:
+BoldGym is **Node/Express on MongoDB**, single location (gym + beach _gates_, not
+multi-branch — branches are a future feature). Keystone never touches Mongo; it
+calls BoldGym's access API, which maps to these collections server-side:
 
-- **`users`** (read): `memberId` ("GYM-00001"), `subscriptionStatus`
-  (`none|active|past_due|cancelled|paused`), `subscriptionExpiryDate`,
-  `access.gym`, and `deviceUserId` (the linked Hikvision `employeeNo` — a field
-  BoldGym will add).
-- **`scanlogs`** (insert): the existing attendance shape
-  `{ memberId, gate:'gym', result:'granted', reason, scannedAt, deviceId }` —
-  no new table needed. Keystone writes raw rows; BoldGym does analytics.
+- **`users`** (read behind `GET /api/access/members`): `memberId` ("GYM-00001"),
+  `subscriptionStatus` (`none|active|past_due|cancelled|paused`),
+  `subscriptionExpiryDate`, `access.gym`, and `deviceUserId` (the linked
+  Hikvision `employeeNo`, a field added to the model).
+- **`scanlogs`** (insert behind `POST /api/access/attendance`): the existing
+  attendance shape `{ memberId, gate:'gym', result:'granted', reason, scannedAt,
+deviceId }` — no new table. Keystone posts raw scans; BoldGym does analytics.
 
 Enforcement is stricter than BoldGym's QR whitelist (which only checks
 `access.gym`): a member is allowed iff active **and** unexpired **and**
@@ -137,10 +140,12 @@ whitelist/snapshot mechanism.
 
 - ✅ `setValidity` disable-not-delete (commit `ed19d9f`).
 - ✅ Pure enforcement + drift reconciliation in `libs/domain/gym`.
-- ✅ `MongoGymConnector`, membership poller, attendance sink (`b684403`,
-  `c07e67e`). No-op until `GYM_DATABASE_URL` is set.
-- ⬜ BoldGym adds the `User.deviceUserId` field + a way for staff to set it.
-- ⬜ Integration test against a real/seeded BoldGym Mongo.
+- ✅ Membership poller + attendance sink, over the `HttpGymConnector`
+  (`b684403`, `c07e67e`, `7f539de`). No-op until `GYM_API_URL` is set.
+- ✅ BoldGym access API + `User.deviceUserId` (BoldGym branch
+  `feat/keystone-access-api`).
+- ⬜ Front-desk UI in BoldGym for staff to set `deviceUserId` on a member.
+- ⬜ End-to-end test against a running BoldGym + a seeded member.
 - ⬜ Confirm `UserInfo/Modify` disable semantics on DS-K1T342 firmware (bench).
 
 ## Alternatives rejected
@@ -152,5 +157,7 @@ whitelist/snapshot mechanism.
   home-branch-only, per-site model.
 - **Delete on expiry:** destroys the enrolled face; renewals would require
   re-enrollment at the terminal.
-- **Gym API instead of direct DB:** preferred in general, but the owner has DB
-  access and no suitable API; mitigated by writing only to a dedicated table.
+- **Direct DB access (originally chosen, later reversed):** couples Keystone to
+  BoldGym's Mongo schema and needs DB credentials on every branch box. Replaced
+  by a small HTTP API on BoldGym, which keeps the schema private and the auth
+  simple (shared key). This is the accepted approach.
