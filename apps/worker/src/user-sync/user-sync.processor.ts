@@ -74,8 +74,10 @@ export function createUserSyncWorker(
             }
           }
         } else {
+          // Revoke = disable, never delete: the face/card is enrolled on the
+          // device and must survive so a renewal needs no re-enrollment (ADR 0006).
           const user = await prisma.user.findUnique({ where: { id: userId } });
-          if (user) await driver.deleteUser(user.employeeNo);
+          if (user) await driver.setValidity(user.employeeNo, false);
         }
 
         // ── 3. Mark synced ────────────────────────────────────────────────

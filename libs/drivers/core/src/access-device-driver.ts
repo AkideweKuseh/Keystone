@@ -52,6 +52,14 @@ export interface AccessDeviceDriver {
   discoverCapabilities(): Promise<DeviceCapabilities>;
   upsertUser(user: DeviceUserPayload): Promise<void>;
   deleteUser(employeeNo: string): Promise<void>;
+  /**
+   * Enable or disable an already-enrolled user without deleting them, by
+   * setting their validity window. Disabling blocks access while preserving the
+   * on-device face/card enrollment so a renewal needs no re-enrollment.
+   * `endTime` (ISO 8601) sets the new expiry when re-enabling; ignored when
+   * disabling. See ADR 0006.
+   */
+  setValidity(employeeNo: string, enable: boolean, endTime?: string): Promise<void>;
   listUsers(opts?: ListOpts): Promise<DeviceUserPayload[]>;
   upsertCard(employeeNo: string, card: CardPayload): Promise<void>;
   upsertFace(employeeNo: string, image: Buffer): Promise<void>;

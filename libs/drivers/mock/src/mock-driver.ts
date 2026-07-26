@@ -18,6 +18,7 @@ export interface MockDriverConfig {
 export class MockDriver implements AccessDeviceDriver {
   private readonly users = new Map<string, DeviceUserPayload>();
   private readonly cards = new Map<string, Map<string, string>>();
+  private readonly enabled = new Map<string, boolean>();
   public readonly callLog: string[] = [];
 
   constructor(private readonly config: MockDriverConfig = {}) {}
@@ -64,12 +65,20 @@ export class MockDriver implements AccessDeviceDriver {
   async upsertUser(user: DeviceUserPayload): Promise<void> {
     await this.simulate('upsertUser', undefined);
     this.users.set(user.employeeNo, user);
+    this.enabled.set(user.employeeNo, true);
   }
 
   async deleteUser(employeeNo: string): Promise<void> {
     await this.simulate('deleteUser', undefined);
     this.users.delete(employeeNo);
     this.cards.delete(employeeNo);
+    this.enabled.delete(employeeNo);
+  }
+
+  async setValidity(employeeNo: string, enable: boolean, _endTime?: string): Promise<void> {
+    await this.simulate('setValidity', undefined);
+    // Modeled as an in-place toggle: enrollment (user/cards) is untouched.
+    this.enabled.set(employeeNo, enable);
   }
 
   async listUsers(_opts?: ListOpts): Promise<DeviceUserPayload[]> {
@@ -108,5 +117,9 @@ export class MockDriver implements AccessDeviceDriver {
   }
   hasUser(employeeNo: string): boolean {
     return this.users.has(employeeNo);
+  }
+  /** True if the user is enrolled and currently enabled (validity open). */
+  isEnabled(employeeNo: string): boolean {
+    return this.enabled.get(employeeNo) ?? false;
   }
 }

@@ -81,6 +81,27 @@ export class HikvisionDriver implements AccessDeviceDriver {
     );
   }
 
+  async setValidity(employeeNo: string, enable: boolean, endTime?: string): Promise<void> {
+    // Modify only the Valid block, leaving the face/card enrollment intact.
+    // Disabling sets enable=false AND a past endTime (belt-and-suspenders across
+    // firmwares that honour only one of the two). See ADR 0006.
+    const body = {
+      UserInfo: {
+        employeeNo,
+        Valid: {
+          enable,
+          beginTime: '2000-01-01T00:00:00',
+          endTime: enable ? (endTime ?? '2037-12-31T23:59:59') : '2000-01-01T00:00:01',
+        },
+      },
+    };
+    await this.http.put(
+      '/ISAPI/AccessControl/UserInfo/Modify?format=json',
+      JSON.stringify(body),
+      'application/json',
+    );
+  }
+
   async listUsers(opts?: ListOpts): Promise<DeviceUserPayload[]> {
     const body = {
       UserInfoSearchCond: {
