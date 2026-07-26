@@ -15,6 +15,7 @@
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@sam/auth": "workspace:*",
+    "@sam/domain": "workspace:*",
     "@sam/drivers-core": "workspace:*",
     "@sam/drivers-hikvision": "workspace:*",
     "@sam/drivers-mock": "workspace:*",
@@ -23,6 +24,7 @@
     "bullmq": "^5.76.9",
     "fast-xml-parser": "^5.8.0",
     "ioredis": "^5.10.1",
+    "mongodb": "^6.10.0",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {

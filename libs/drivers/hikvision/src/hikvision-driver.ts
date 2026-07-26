@@ -115,15 +115,22 @@ export class HikvisionDriver implements AccessDeviceDriver {
       JSON.stringify(body),
     );
     const list = res.UserInfoSearch?.UserInfo ?? [];
-    return list.map((u) => ({
-      employeeNo: String(u['employeeNo'] ?? ''),
-      firstName: String(u['name'] ?? '').split(' ')[0] ?? '',
-      lastName: String(u['name'] ?? '')
-        .split(' ')
-        .slice(1)
-        .join(' '),
-      doorIndexes: [],
-    }));
+    return list.map((u) => {
+      const valid = u['Valid'] as { beginTime?: string; endTime?: string } | undefined;
+      return {
+        employeeNo: String(u['employeeNo'] ?? ''),
+        firstName: String(u['name'] ?? '').split(' ')[0] ?? '',
+        lastName: String(u['name'] ?? '')
+          .split(' ')
+          .slice(1)
+          .join(' '),
+        // Carry the validity window so callers can tell enabled vs disabled
+        // (our disable path sets endTime into the past). See ADR 0006.
+        validFrom: valid?.beginTime,
+        validTo: valid?.endTime,
+        doorIndexes: [],
+      };
+    });
   }
 
   async upsertCard(employeeNo: string, card: CardPayload): Promise<void> {

@@ -6,6 +6,7 @@ import { createCapabilityDiscoveryWorker } from './capability-discovery/capabili
 import { createEventPollWorker } from './event-poll/event-poll.processor';
 import { createEventProcessWorker } from './event-process/event-process.processor';
 import { createGraceExpiryWorker } from './grace-expiry/grace-expiry.processor';
+import { createGymPollWorker } from './gym/gym-poll.processor';
 import { createHealthCheckWorker } from './health-check/health-check.processor';
 import { createReconcilerWorker } from './reconciler/reconciler.processor';
 import { createUserSyncWorker } from './user-sync/user-sync.processor';
@@ -28,7 +29,8 @@ async function bootstrap(): Promise<void> {
     createEventPollWorker(prisma, crypto),
     createWebhookDispatchWorker(prisma),
     createGraceExpiryWorker(prisma),
-  ];
+    createGymPollWorker(prisma, crypto), // null when GYM_DATABASE_URL is unset
+  ].filter((w) => w !== null);
 
   process.stdout.write(`Workers started: ${workers.length} queues active\n`);
 
