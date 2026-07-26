@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   isMembershipActive,
   desiredValidity,
-  doorEventToAttendance,
   planValidityActions,
   MembershipStatus,
   type GymMember,
@@ -104,31 +103,5 @@ describe('planValidityActions', () => {
       now,
     );
     expect(actions).toEqual([]);
-  });
-});
-
-describe('doorEventToAttendance', () => {
-  it('maps an entry event to a granted gym ScanLog row', () => {
-    const row = doorEventToAttendance({
-      memberId: 'GYM-00123',
-      deviceId: 'dev-1',
-      eventTime: now,
-      direction: 'entry',
-    });
-    expect(row).toEqual({
-      memberId: 'GYM-00123',
-      gate: 'gym',
-      result: 'granted',
-      reason: 'entry',
-      scannedAt: now,
-      deviceId: 'dev-1',
-      isOfflineScan: false,
-    });
-  });
-
-  it('leaves reason null when direction is unknown', () => {
-    const row = doorEventToAttendance({ memberId: 'GYM-1', deviceId: null, eventTime: now });
-    expect(row.reason).toBeNull();
-    expect(row.result).toBe('granted');
   });
 });

@@ -1,35 +1,35 @@
 import { describe, it, expect } from 'vitest';
-import { mapUserDoc, directionFromDeviceName, gymConfigured } from './gym-connector';
+import { parseMemberDto, directionFromDeviceName, gymConfigured } from './gym-connector';
 
-describe('mapUserDoc', () => {
-  it('maps a full BoldGym user doc to a GymMember', () => {
-    const m = mapUserDoc({
+describe('parseMemberDto', () => {
+  it('maps a full API member object to a GymMember', () => {
+    const m = parseMemberDto({
       memberId: 'GYM-00123',
       subscriptionStatus: 'active',
-      subscriptionExpiryDate: new Date('2026-12-31T00:00:00Z'),
-      access: { gym: true, beach: false },
+      subscriptionExpiryDate: '2026-12-31T00:00:00.000Z',
+      accessGym: true,
       deviceUserId: '42',
     });
     expect(m).toEqual({
       memberId: 'GYM-00123',
       subscriptionStatus: 'active',
-      subscriptionExpiryDate: new Date('2026-12-31T00:00:00Z'),
+      subscriptionExpiryDate: new Date('2026-12-31T00:00:00.000Z'),
       accessGym: true,
       deviceUserId: '42',
     });
   });
 
   it('defaults missing fields safely (status none, accessGym false, null dates)', () => {
-    const m = mapUserDoc({ memberId: 'GYM-1' });
+    const m = parseMemberDto({ memberId: 'GYM-1' });
     expect(m.subscriptionStatus).toBe('none');
     expect(m.accessGym).toBe(false);
     expect(m.subscriptionExpiryDate).toBeNull();
     expect(m.deviceUserId).toBeNull();
   });
 
-  it('treats access.gym absent or false as no gym access', () => {
-    expect(mapUserDoc({ memberId: 'GYM-1', access: { beach: true } }).accessGym).toBe(false);
-    expect(mapUserDoc({ memberId: 'GYM-1', access: { gym: false } }).accessGym).toBe(false);
+  it('treats accessGym absent or false as no gym access', () => {
+    expect(parseMemberDto({ memberId: 'GYM-1' }).accessGym).toBe(false);
+    expect(parseMemberDto({ memberId: 'GYM-1', accessGym: false }).accessGym).toBe(false);
   });
 });
 
@@ -49,12 +49,12 @@ describe('directionFromDeviceName', () => {
 });
 
 describe('gymConfigured', () => {
-  it('is false for blank or placeholder URIs', () => {
+  it('is false for blank or placeholder URLs', () => {
     expect(gymConfigured(undefined)).toBe(false);
     expect(gymConfigured('')).toBe(false);
-    expect(gymConfigured('mongodb://readonly:CHANGE_ME@host/gym')).toBe(false);
+    expect(gymConfigured('https://gym.example/CHANGE_ME')).toBe(false);
   });
-  it('is true for a real URI', () => {
-    expect(gymConfigured('mongodb://user:pass@host:27017/gym')).toBe(true);
+  it('is true for a real URL', () => {
+    expect(gymConfigured('https://gym.boldfitness.app')).toBe(true);
   });
 });

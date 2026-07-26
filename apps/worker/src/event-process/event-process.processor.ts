@@ -1,6 +1,5 @@
 import { Worker } from 'bullmq';
 import Redis from 'ioredis';
-import { doorEventToAttendance } from '@sam/domain';
 import { PrismaService } from '@sam/persistence';
 import type { EventProcessJobData } from '@sam/queue';
 import { QUEUE_EVENT_PROCESS } from '@sam/queue';
@@ -85,31 +84,27 @@ export function createEventProcessWorker(
       // Fan out to outbound webhooks (Keystone → gym), if configured.
       await enqueueEventWebhooks(prisma, eventId, tenantId);
 
-      // Forward attendance to BoldGym (raw ScanLog row), if the gym DB is wired.
-      // Best-effort: the event is already persisted in Keystone, so a gym-DB
-      // hiccup must not fail the job. See ADR 0006.
+      // Report attendance to BoldGym's access API, if wired. BoldGym resolves the
+      // device user to a member and records it. Best-effort: the event is already
+      // persisted in Keystone, so a gym-API hiccup must not fail the job. ADR 0006.
       if (gym && eventType === 'access_granted' && parsed.employeeNo) {
         try {
-          const memberId = await gym.resolveMemberByDeviceUser(parsed.employeeNo);
-          if (memberId) {
-            const device = event.deviceId
-              ? await prisma.device.findUnique({
-                  where: { id: event.deviceId },
-                  select: { name: true },
-                })
-              : null;
-            await gym.writeAttendance(
-              doorEventToAttendance({
-                memberId,
-                deviceId: event.deviceId,
-                eventTime: parsed.eventTime ?? event.receivedAt,
-                direction: directionFromDeviceName(device?.name),
-              }),
-            );
-          }
+          const device = event.deviceId
+            ? await prisma.device.findUnique({
+                where: { id: event.deviceId },
+                select: { name: true },
+              })
+            : null;
+          await gym.recordScan({
+            deviceUserId: parsed.employeeNo,
+            deviceId: event.deviceId,
+            deviceName: device?.name ?? null,
+            eventTime: parsed.eventTime ?? event.receivedAt,
+            direction: directionFromDeviceName(device?.name),
+          });
         } catch (err) {
           process.stdout.write(
-            `event-process: attendance write failed for event ${eventId}: ${(err as Error).message}\n`,
+            `event-process: attendance report failed for event ${eventId}: ${(err as Error).message}\n`,
           );
         }
       }

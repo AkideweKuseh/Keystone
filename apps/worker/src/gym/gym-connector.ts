@@ -1,31 +1,60 @@
-import { MongoClient, type Db, type Document } from 'mongodb';
-import type { AttendanceRecord, GymMember } from '@sam/domain';
+import type { GymMember } from '@sam/domain';
 
 /**
- * Reads membership from and writes attendance to BoldGym's MongoDB. Keystone is
- * a client of that DB, not its owner — it only touches the `users` collection
- * (read) and `scanlogs` (insert). Independent of BoldGym's QR whitelist. ADR 0006.
+ * Talks to BoldGym over its access-integration HTTP API (not its database).
+ * Keystone polls membership and posts attendance; BoldGym owns its own schema
+ * and resolves device users to members server-side. See ADR 0006.
  */
 export interface GymConnector {
-  /** Members that staff have linked to a device enrollment (`deviceUserId` set). */
+  /** Members staff have linked to a device enrollment (`deviceUserId` set). */
   listLinkedMembers(): Promise<GymMember[]>;
-  /** Resolve a device `employeeNo` to a BoldGym `memberId`, or null if unlinked. */
-  resolveMemberByDeviceUser(deviceUserId: string): Promise<string | null>;
-  /** Append a raw attendance row to `scanlogs`. */
-  writeAttendance(record: AttendanceRecord): Promise<void>;
+  /** Report a door scan; BoldGym resolves the member and records attendance. */
+  recordScan(scan: ScanInput): Promise<void>;
   close(): Promise<void>;
 }
 
-/** True when a real gym DB URI is configured (not blank / not the template placeholder). */
-export function gymConfigured(uri: string | undefined): uri is string {
-  return !!uri && !uri.includes('CHANGE_ME');
+/** A door scan Keystone reports to BoldGym; BoldGym maps it to a ScanLog. */
+export interface ScanInput {
+  /** Device `employeeNo` — BoldGym resolves this to a member via `deviceUserId`. */
+  deviceUserId: string;
+  deviceId: string | null;
+  deviceName: string | null;
+  eventTime: Date;
+  direction?: 'entry' | 'exit';
 }
 
-/** Build the Mongo connector from GYM_DATABASE_URL, or null when unconfigured. */
+/** JSON shape of one member in `GET /api/access/members`. */
+interface MemberDto {
+  memberId?: string;
+  subscriptionStatus?: string;
+  subscriptionExpiryDate?: string | null;
+  accessGym?: boolean;
+  deviceUserId?: string | null;
+}
+
+/** Pure: coerce an API member object into a domain GymMember. Exported for tests. */
+export function parseMemberDto(dto: MemberDto): GymMember {
+  return {
+    memberId: dto.memberId ?? '',
+    subscriptionStatus: dto.subscriptionStatus ?? 'none',
+    subscriptionExpiryDate: dto.subscriptionExpiryDate
+      ? new Date(dto.subscriptionExpiryDate)
+      : null,
+    accessGym: dto.accessGym === true,
+    deviceUserId: dto.deviceUserId ?? null,
+  };
+}
+
+/** True when the gym API is configured (base URL set, no placeholder). */
+export function gymConfigured(url: string | undefined): url is string {
+  return !!url && !url.includes('CHANGE_ME');
+}
+
+/** Build the HTTP connector from GYM_API_URL / GYM_API_KEY, or null when unset. */
 export function makeGymConnector(): GymConnector | null {
-  const uri = process.env['GYM_DATABASE_URL'];
-  if (!gymConfigured(uri)) return null;
-  return new MongoGymConnector(uri);
+  const url = process.env['GYM_API_URL'];
+  if (!gymConfigured(url)) return null;
+  return new HttpGymConnector(url, process.env['GYM_API_KEY'] ?? '');
 }
 
 /**
@@ -41,67 +70,53 @@ export function directionFromDeviceName(
   return undefined;
 }
 
-/** Shape of the BoldGym `users` doc fields Keystone projects. */
-interface UserDoc extends Document {
-  memberId?: string;
-  subscriptionStatus?: string;
-  subscriptionExpiryDate?: Date | null;
-  access?: { gym?: boolean; beach?: boolean };
-  deviceUserId?: string | null;
-}
+const DEFAULT_TIMEOUT_MS = 8000;
 
-/** Pure: map a projected BoldGym user document to a domain GymMember. Exported for tests. */
-export function mapUserDoc(doc: UserDoc): GymMember {
-  return {
-    memberId: doc.memberId ?? '',
-    subscriptionStatus: doc.subscriptionStatus ?? 'none',
-    subscriptionExpiryDate: doc.subscriptionExpiryDate
-      ? new Date(doc.subscriptionExpiryDate)
-      : null,
-    accessGym: doc.access?.gym === true,
-    deviceUserId: doc.deviceUserId ?? null,
-  };
-}
+export class HttpGymConnector implements GymConnector {
+  constructor(
+    private readonly baseUrl: string,
+    private readonly apiKey: string,
+    private readonly timeoutMs = DEFAULT_TIMEOUT_MS,
+  ) {
+    this.baseUrl = baseUrl.replace(/\/+$/, '');
+  }
 
-const USER_PROJECTION = {
-  memberId: 1,
-  subscriptionStatus: 1,
-  subscriptionExpiryDate: 1,
-  'access.gym': 1,
-  deviceUserId: 1,
-} as const;
-
-export class MongoGymConnector implements GymConnector {
-  private readonly client: MongoClient;
-  private readonly db: Db;
-
-  constructor(uri: string) {
-    this.client = new MongoClient(uri);
-    // Database name comes from the URI path; MongoClient.db() with no arg uses it.
-    this.db = this.client.db();
+  private async request(path: string, init?: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      return await fetch(`${this.baseUrl}${path}`, {
+        ...init,
+        signal: controller.signal,
+        headers: {
+          'X-Access-Key': this.apiKey,
+          ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+          ...init?.headers,
+        },
+      });
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async listLinkedMembers(): Promise<GymMember[]> {
-    const docs = await this.db
-      .collection<UserDoc>('users')
-      .find({ deviceUserId: { $nin: [null, ''] } }, { projection: USER_PROJECTION })
-      .toArray();
-    return docs.map(mapUserDoc);
+    const res = await this.request('/api/access/members');
+    if (!res.ok) throw new Error(`gym members fetch failed: HTTP ${res.status}`);
+    const data = (await res.json()) as { members?: MemberDto[] };
+    return (data.members ?? []).map(parseMemberDto);
   }
 
-  async resolveMemberByDeviceUser(deviceUserId: string): Promise<string | null> {
-    const doc = await this.db
-      .collection<UserDoc>('users')
-      .findOne({ deviceUserId }, { projection: { memberId: 1 } });
-    return doc?.memberId ?? null;
-  }
-
-  async writeAttendance(record: AttendanceRecord): Promise<void> {
-    // syncedAt marks it as written by Keystone (vs BoldGym's own QR scans).
-    await this.db.collection('scanlogs').insertOne({ ...record, syncedAt: new Date() });
+  async recordScan(scan: ScanInput): Promise<void> {
+    const res = await this.request('/api/access/attendance', {
+      method: 'POST',
+      body: JSON.stringify({ ...scan, eventTime: scan.eventTime.toISOString() }),
+    });
+    // 404 = the device user isn't linked to a member yet — expected, not an error.
+    if (res.status === 404) return;
+    if (!res.ok) throw new Error(`gym attendance post failed: HTTP ${res.status}`);
   }
 
   async close(): Promise<void> {
-    await this.client.close();
+    // No persistent connection to close for the HTTP client.
   }
 }
