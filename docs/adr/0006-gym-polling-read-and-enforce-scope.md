@@ -65,56 +65,42 @@ local box (ADR: Option A) is sufficient — no VPN, no public API on Keystone.
 
 ## Member↔device linking
 
-Because `employeeNo ≠ member number`, a human must connect "this enrollment =
-this member" once. Keystone assists rather than owns it:
-
-1. **Enrollment sync (device → gym DB):** Keystone periodically calls the
-   driver's `listUsers()` on each terminal and upserts unlinked enrollments
-   (`device_user_id`, name, branch, first_seen) into a **staging/link table** in
-   the gym DB.
-2. **Human link (gym app):** staff match each staged enrollment to a member in
-   the gym platform, populating `member_number ↔ device_user_id`.
-3. **Enforcement (gym DB → device):** Keystone reads linked members + status;
-   for expired/cancelled ones it disables that `device_user_id` on the branch
-   terminal; for reactivated ones it re-enables.
-
-Keystone keeps a **local mirror** (its `users` table, keyed by device
-`employeeNo`, member number in metadata) so grace windows, retries, and audit
-work offline and survive a WAN outage.
+Because `employeeNo ≠ member number`, a human connects "this enrollment = this
+member" once, in BoldGym. At enrollment, staff set the member's `deviceUserId`
+to the terminal's `employeeNo`. Keystone then simply **reads** that mapping via
+`GET /api/access/members` — it does not run a staging table or a local member
+mirror. For enforcement, Keystone reconciles each terminal's enrolled set
+against the returned members: disabling lapsed ones, re-enabling renewed ones.
 
 ## Components
 
-**Reuse (already built):**
+**Reuse:**
 
-- Device driver: `listUsers`, `deleteUser`, `unlockDoor`, `pullEvents`.
+- Device driver: `listUsers` (now carries the validity window), `setValidity`,
+  `unlockDoor`.
 - Receiver + event-process + parser (entry/exit ingestion).
-- grace-expiry worker (revocation engine) — repoint its source to gym-polled
-  membership and its action to _disable_ instead of _delete_.
 - Health check (with hysteresis), capability discovery, remote unlock.
 - Docker prod compose + Dockerfiles.
 
-**Net-new:**
+**Net-new (built):**
 
-- **Gym DB connector** — read membership, write attendance (dedicated table).
-- **Membership poller** (scheduled worker) — reconcile enrolled set ↔ gym
-  membership; enqueue disable/enable.
-- **Enrollment-link sync** — push device enrollments into the gym staging table.
-- **Attendance sink** — in event-process, write raw entry/exit rows to gym DB,
-  idempotently.
-- **Driver `setValidity(employeeNo, enable, endTime)`** — disable without delete
-  (the driver currently only has `deleteUser`).
-- **One-click launcher + per-branch config** (branch id, gym DB DSN, device list).
+- **`HttpGymConnector`** — `GET /api/access/members`, `POST /api/access/attendance`.
+- **Membership poller** — reconcile enrolled set ↔ membership; disable/enable.
+- **Attendance sink** — in event-process, POST raw scans to the gym API.
+- **Driver `setValidity(employeeNo, enable, endTime)`** — disable without delete.
+- **One-click launcher + per-branch config** (`GYM_API_URL`, `GYM_API_KEY`).
+- **BoldGym access API** + `User.deviceUserId` (BoldGym side).
 
 ## Consequences
 
 - Keystone never handles biometric data — smaller security and privacy surface.
 - Provisioning (`upsertUser`/`upsertCard` push) is dropped from the runtime flow;
   the code stays in the driver but is no longer invoked by the sync path.
-- A branch box survives WAN/gym-DB outages: doors keep working (enrollment is
-  on-device), attendance buffers locally and drains when the DB is reachable,
-  revocations apply on the next successful poll.
-- Direct gym-DB coupling is a known risk; contained to the connector and a
-  dedicated attendance table, treated as an integration contract that can change.
+- A branch box survives WAN/gym-API outages: doors keep working (enrollment is
+  on-device); attendance posts are best-effort and a failed post is logged, not
+  retried; revocations apply on the next successful poll.
+- Coupling to BoldGym is now an **API contract** (two endpoints), not its schema
+  — BoldGym can change its DB freely as long as the endpoints hold.
 
 ## BoldGym specifics (confirmed from the codebase)
 
