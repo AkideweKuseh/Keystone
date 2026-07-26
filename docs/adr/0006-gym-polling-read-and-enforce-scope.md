@@ -113,14 +113,35 @@ work offline and survive a WAN outage.
 - Direct gym-DB coupling is a known risk; contained to the connector and a
   dedicated attendance table, treated as an integration contract that can change.
 
-## Open items (block full build)
+## BoldGym specifics (confirmed from the codebase)
 
-- **Gym DB schema:** membership read shape (member number, status, validTo,
-  home branch, `device_user_id` link) and the attendance write table.
-- **Link-confirmation UX** on the gym-platform side (who matches enrollments to
-  members, and where).
-- **Disable semantics** on DS-K1T342 firmware — confirm the exact ISAPI call to
-  set `Valid.enable=false` / past `endTime` without disturbing the face template.
+BoldGym is **Node/Express on MongoDB** (`MONGODB_URI`), single location (gym +
+beach _gates_, not multi-branch — branches are a future feature). Keystone
+touches two collections:
+
+- **`users`** (read): `memberId` ("GYM-00001"), `subscriptionStatus`
+  (`none|active|past_due|cancelled|paused`), `subscriptionExpiryDate`,
+  `access.gym`, and `deviceUserId` (the linked Hikvision `employeeNo` — a field
+  BoldGym will add).
+- **`scanlogs`** (insert): the existing attendance shape
+  `{ memberId, gate:'gym', result:'granted', reason, scannedAt, deviceId }` —
+  no new table needed. Keystone writes raw rows; BoldGym does analytics.
+
+Enforcement is stricter than BoldGym's QR whitelist (which only checks
+`access.gym`): a member is allowed iff active **and** unexpired **and**
+`access.gym`. This closes the gap where BoldGym's expiry job only _reminds_ and
+never revokes physical access. Keystone is independent of the QR
+whitelist/snapshot mechanism.
+
+## Implementation status
+
+- ✅ `setValidity` disable-not-delete (commit `ed19d9f`).
+- ✅ Pure enforcement + drift reconciliation in `libs/domain/gym`.
+- ✅ `MongoGymConnector`, membership poller, attendance sink (`b684403`,
+  `c07e67e`). No-op until `GYM_DATABASE_URL` is set.
+- ⬜ BoldGym adds the `User.deviceUserId` field + a way for staff to set it.
+- ⬜ Integration test against a real/seeded BoldGym Mongo.
+- ⬜ Confirm `UserInfo/Modify` disable semantics on DS-K1T342 firmware (bench).
 
 ## Alternatives rejected
 
