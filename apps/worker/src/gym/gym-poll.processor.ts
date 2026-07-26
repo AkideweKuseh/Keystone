@@ -5,7 +5,7 @@ import { HikvisionDriver } from '@sam/drivers-hikvision';
 import { MockDriver } from '@sam/drivers-mock';
 import { PrismaService } from '@sam/persistence';
 import { planValidityActions, type EnrolledDeviceUser } from '@sam/domain';
-import { MongoGymConnector, type GymConnector } from './gym-connector';
+import type { GymConnector } from './gym-connector';
 
 const QUEUE_GYM_POLL = 'gym-poll';
 
@@ -16,30 +16,22 @@ const conn = { host: redisHost, port: redisPort };
 
 const POLL_INTERVAL_SEC = parseInt(process.env['GYM_POLL_INTERVAL_SEC'] ?? '60', 10);
 
-/** True when a real gym DB URI is configured (not blank / not the template placeholder). */
-function gymConfigured(uri: string | undefined): uri is string {
-  return !!uri && !uri.includes('CHANGE_ME');
-}
-
 /**
  * Polls BoldGym membership and enforces it on the terminals: disables lapsed
  * members and re-enables renewed ones, via drift-based reconciliation (only acts
  * where the device disagrees with membership). Reads the device's enrolled set —
- * it never provisions. No-ops if GYM_DATABASE_URL isn't configured. See ADR 0006.
- *
- * `connectorOverride` is for tests; production builds the Mongo connector.
+ * it never provisions. Returns null (no worker) when no gym connector is
+ * configured. See ADR 0006.
  */
 export function createGymPollWorker(
   prisma: PrismaService,
   crypto: CryptoService,
-  connectorOverride?: GymConnector,
+  connector: GymConnector | null,
 ): Worker | null {
-  const uri = process.env['GYM_DATABASE_URL'];
-  if (!connectorOverride && !gymConfigured(uri)) {
-    process.stdout.write('gym-poll: GYM_DATABASE_URL not configured — poller disabled\n');
+  if (!connector) {
+    process.stdout.write('gym-poll: no gym connector configured — poller disabled\n');
     return null;
   }
-  const connector = connectorOverride ?? new MongoGymConnector(uri as string);
 
   const registry = new DriverRegistry();
   registry.register('hikvision', (t) => new HikvisionDriver(t));

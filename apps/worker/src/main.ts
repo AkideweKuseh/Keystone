@@ -7,6 +7,7 @@ import { createEventPollWorker } from './event-poll/event-poll.processor';
 import { createEventProcessWorker } from './event-process/event-process.processor';
 import { createGraceExpiryWorker } from './grace-expiry/grace-expiry.processor';
 import { createGymPollWorker } from './gym/gym-poll.processor';
+import { makeGymConnector } from './gym/gym-connector';
 import { createHealthCheckWorker } from './health-check/health-check.processor';
 import { createReconcilerWorker } from './reconciler/reconciler.processor';
 import { createUserSyncWorker } from './user-sync/user-sync.processor';
@@ -20,16 +21,20 @@ async function bootstrap(): Promise<void> {
 
   const crypto = new CryptoService();
 
+  // One shared BoldGym Mongo connection (null when GYM_DATABASE_URL is unset),
+  // used by both the membership poller and the attendance sink.
+  const gym = makeGymConnector();
+
   const workers = [
     createCapabilityDiscoveryWorker(prisma, crypto),
     createHealthCheckWorker(prisma, crypto),
     createUserSyncWorker(prisma, crypto),
     createReconcilerWorker(prisma, crypto),
-    createEventProcessWorker(prisma),
+    createEventProcessWorker(prisma, gym),
     createEventPollWorker(prisma, crypto),
     createWebhookDispatchWorker(prisma),
     createGraceExpiryWorker(prisma),
-    createGymPollWorker(prisma, crypto), // null when GYM_DATABASE_URL is unset
+    createGymPollWorker(prisma, crypto, gym),
   ].filter((w) => w !== null);
 
   process.stdout.write(`Workers started: ${workers.length} queues active\n`);

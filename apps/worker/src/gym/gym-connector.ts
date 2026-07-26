@@ -16,6 +16,31 @@ export interface GymConnector {
   close(): Promise<void>;
 }
 
+/** True when a real gym DB URI is configured (not blank / not the template placeholder). */
+export function gymConfigured(uri: string | undefined): uri is string {
+  return !!uri && !uri.includes('CHANGE_ME');
+}
+
+/** Build the Mongo connector from GYM_DATABASE_URL, or null when unconfigured. */
+export function makeGymConnector(): GymConnector | null {
+  const uri = process.env['GYM_DATABASE_URL'];
+  if (!gymConfigured(uri)) return null;
+  return new MongoGymConnector(uri);
+}
+
+/**
+ * Infer entry/exit from the device name (these terminals don't encode direction
+ * in the payload; it's which reader fired). Pure — exported for tests.
+ */
+export function directionFromDeviceName(
+  name: string | null | undefined,
+): 'entry' | 'exit' | undefined {
+  const n = (name ?? '').toLowerCase();
+  if (n.includes('exit')) return 'exit';
+  if (n.includes('entry') || n.includes('entrance') || n.includes('in')) return 'entry';
+  return undefined;
+}
+
 /** Shape of the BoldGym `users` doc fields Keystone projects. */
 interface UserDoc extends Document {
   memberId?: string;

@@ -1,16 +1,21 @@
 import { Worker } from 'bullmq';
 import Redis from 'ioredis';
+import { doorEventToAttendance } from '@sam/domain';
 import { PrismaService } from '@sam/persistence';
 import type { EventProcessJobData } from '@sam/queue';
 import { QUEUE_EVENT_PROCESS } from '@sam/queue';
 import { classifyEvent, parseEventPayload } from './event-parser';
 import { enqueueEventWebhooks } from '../webhook-dispatch/webhook-dispatch.processor';
+import { directionFromDeviceName, type GymConnector } from '../gym/gym-connector';
 
 const redisUrl = process.env['REDIS_URL'] ?? 'redis://localhost:6379';
 const redisHost = redisUrl.replace('redis://', '').split(':')[0] ?? 'localhost';
 const redisPort = parseInt(redisUrl.split(':')[2] ?? '6379', 10);
 
-export function createEventProcessWorker(prisma: PrismaService): Worker<EventProcessJobData> {
+export function createEventProcessWorker(
+  prisma: PrismaService,
+  gym: GymConnector | null = null,
+): Worker<EventProcessJobData> {
   const redisPub = new Redis({ host: redisHost, port: redisPort, lazyConnect: true });
 
   return new Worker<EventProcessJobData>(
@@ -79,6 +84,35 @@ export function createEventProcessWorker(prisma: PrismaService): Worker<EventPro
 
       // Fan out to outbound webhooks (Keystone → gym), if configured.
       await enqueueEventWebhooks(prisma, eventId, tenantId);
+
+      // Forward attendance to BoldGym (raw ScanLog row), if the gym DB is wired.
+      // Best-effort: the event is already persisted in Keystone, so a gym-DB
+      // hiccup must not fail the job. See ADR 0006.
+      if (gym && eventType === 'access_granted' && parsed.employeeNo) {
+        try {
+          const memberId = await gym.resolveMemberByDeviceUser(parsed.employeeNo);
+          if (memberId) {
+            const device = event.deviceId
+              ? await prisma.device.findUnique({
+                  where: { id: event.deviceId },
+                  select: { name: true },
+                })
+              : null;
+            await gym.writeAttendance(
+              doorEventToAttendance({
+                memberId,
+                deviceId: event.deviceId,
+                eventTime: parsed.eventTime ?? event.receivedAt,
+                direction: directionFromDeviceName(device?.name),
+              }),
+            );
+          }
+        } catch (err) {
+          process.stdout.write(
+            `event-process: attendance write failed for event ${eventId}: ${(err as Error).message}\n`,
+          );
+        }
+      }
     },
     { connection: { host: redisHost, port: redisPort }, concurrency: 30 },
   );
